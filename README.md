@@ -147,44 +147,101 @@ trading-skills/
 │       ├── README.md            # Skills overview
 │       ├── technical-analysis/
 │       │   ├── SKILL.md
-│       │   └── scripts/
-│       │       └── indicator_suite.py
+│       │   ├── scripts/
+│       │   │   └── indicator_suite.py
+│       │   └── resources/       # 📚 NEW: Progressive disclosure
+│       │       ├── examples.md
+│       │       ├── troubleshooting.md
+│       │       └── reference.md (planned)
 │       ├── opportunity-scanner/
 │       │   ├── SKILL.md
-│       │   └── scripts/
-│       │       └── market_scanner.py
+│       │   ├── scripts/
+│       │   │   └── market_scanner.py
+│       │   └── resources/
+│       │       ├── examples.md
+│       │       └── troubleshooting.md
 │       ├── risk-management/
 │       │   ├── SKILL.md
-│       │   └── scripts/
-│       │       └── position_sizing.py
+│       │   ├── scripts/
+│       │   │   └── position_sizing.py
+│       │   └── resources/
+│       │       ├── examples.md
+│       │       └── troubleshooting.md
 │       ├── backtesting/
 │       │   ├── SKILL.md
-│       │   └── scripts/
-│       │       └── backtest_engine.py
+│       │   ├── scripts/
+│       │   │   └── backtest_engine.py
+│       │   └── resources/
+│       │       ├── examples.md
+│       │       ├── troubleshooting.md
+│       │       └── reference.md
 │       └── advanced-analytics/
 │           ├── SKILL.md
-│           └── scripts/
-│               ├── advanced_statistics.py
-│               ├── pattern_recognition.py
-│               ├── correlation_analysis.py
-│               └── volatility_analysis.py
+│           ├── scripts/
+│           │   ├── advanced_statistics.py
+│           │   ├── pattern_recognition.py
+│           │   ├── correlation_analysis.py
+│           │   └── volatility_analysis.py
+│           └── resources/
+│               ├── examples.md
+│               └── troubleshooting.md
 ├── examples/
 │   ├── eurusd_analysis.py       # Basic EURUSD analysis
 │   ├── eurusd_full_analysis.py  # Complete EURUSD analysis
 │   └── gbpusd_full_analysis.py  # Complete GBPUSD analysis
 ├── .gitignore
-├── .mcp.json                    # MetaTrader MCP configuration
+├── .mcp.json.example            # Template for MCP configuration
 ├── README.md                    # This file
 ├── PROYECTO_COMPLETADO.md       # Project completion report
 └── SKILLS_MCP_SETUP.md          # Detailed setup guide
-
 ```
+
+### Progressive Disclosure Architecture
+
+Following Anthropic's best practices, each skill now implements **progressive disclosure**:
+
+1. **SKILL.md** (<5k tokens): Core instructions and workflow
+2. **scripts/**: Executable Python code (loaded on-demand)
+3. **resources/**: Reference documentation (loaded only when referenced)
+   - `examples.md`: 3-5 detailed usage examples with input/output
+   - `troubleshooting.md`: Common issues and solutions
+   - `reference.md`: Complete technical implementation (where applicable)
+
+This structure ensures "only relevant content occupies the context window at any given time."
 
 ## Documentation
 
+### Main Documentation
 - **[PROYECTO_COMPLETADO.md](PROYECTO_COMPLETADO.md)** - Complete project report with objectives and metrics
 - **[SKILLS_MCP_SETUP.md](SKILLS_MCP_SETUP.md)** - Detailed configuration guide with troubleshooting
 - **[.claude/skills/README.md](.claude/skills/README.md)** - Skills overview and usage
+
+### Skill-Specific Resources
+
+Each skill includes comprehensive documentation in its `resources/` directory:
+
+**For Learning & Examples:**
+- Read `resources/examples.md` for 3-5 detailed use cases with expected input/output
+- Examples cover basic usage, advanced scenarios, and edge cases
+
+**For Troubleshooting:**
+- Check `resources/troubleshooting.md` for common issues and solutions
+- Includes diagnostic checklists and quick fixes
+
+**For Technical Details:**
+- Refer to `resources/reference.md` (where available) for complete implementations
+- Contains formulas, algorithms, and detailed code examples
+
+**Example:**
+```
+Need help with position sizing calculation?
+→ Read .claude/skills/risk-management/resources/examples.md
+→ See Example 1: "Basic Position Sizing"
+
+Getting errors in backtest?
+→ Check .claude/skills/backtesting/resources/troubleshooting.md
+→ Look for "Issue 3: Results don't match forward testing"
+```
 
 ## Configuration
 

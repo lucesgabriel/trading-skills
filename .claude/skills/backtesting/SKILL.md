@@ -19,27 +19,18 @@ Validate trading strategies using historical data to calculate real success prob
 ## Backtesting Fundamentals
 
 ### What is Backtesting?
-Testing a trading strategy against historical price data to see how it would have performed in the past. This helps predict future performance and identify strategy weaknesses.
+Testing a trading strategy against historical price data to see how it would have performed in the past. This helps predict future performance and identify strategy weaknesses before risking real capital.
 
-### Key Metrics to Track
-```python
-PERFORMANCE METRICS:
-- Win Rate: (Winning Trades / Total Trades) × 100
-- Average Win: Average profit from winning trades
-- Average Loss: Average loss from losing trades
-- Profit Factor: Gross Profit / Gross Loss
-- Expectancy: (Win Rate × Avg Win) - (Loss Rate × Avg Loss)
-- Maximum Drawdown: Largest peak-to-trough decline
-- Risk/Reward Ratio: Average of all trades
-- Recovery Factor: Net Profit / Max Drawdown
-- Sharpe Ratio: Risk-adjusted returns
+### Key Metrics
+- **Win Rate**: % of winning trades
+- **Profit Factor**: Gross profit / Gross loss (>1.5 is good)
+- **Expectancy**: Average profit per trade
+- **Max Drawdown**: Largest equity decline (target: <20%)
+- **Sharpe Ratio**: Risk-adjusted returns (>1.0 is acceptable)
 
-QUALITY METRICS:
-- Total Trades: Sample size (100+ for statistical significance)
-- Consecutive Losses: Longest losing streak
-- Consecutive Wins: Longest winning streak
-- Time in Market: Percentage of time with open positions
-```
+Minimum: 30 trades for statistical significance, 100+ trades ideal.
+
+📖 *See [resources/reference.md](resources/reference.md) for complete metric formulas*
 
 ## Backtesting Workflow
 
@@ -87,78 +78,24 @@ strategy = {
 ### STEP 2: Get Historical Data
 
 ```python
-def get_backtest_data(symbol, timeframe, lookback_days):
-    """
-    Get sufficient historical data for backtesting
-
-    Recommended minimums:
-    - Intraday strategies: 6-12 months
-    - Swing strategies: 1-2 years
-    - Position strategies: 3-5 years
-    """
-
-    # Calculate required candles
-    candles_needed = calculate_candles(timeframe, lookback_days)
-
-    # Get data from MetaTrader
-    data = metatrader:get_candles_latest(
-        symbol_name=symbol,
-        timeframe=timeframe,
-        count=min(candles_needed, 10000)  # API limit
-    )
-
-    return data
+# Get data from MetaTrader
+candles = mcp__metatrader__get_candles_latest(
+    symbol_name="EURUSD",
+    timeframe="H4",
+    count=2000  # ~330 days of H4 data
+)
 ```
+
+**Data Requirements:**
+- Intraday: 6-12 months minimum
+- Swing: 1-2 years minimum
+- Position: 3-5 years minimum
 
 ### STEP 3: Process Data & Calculate Indicators
 
-```python
-def prepare_backtest_data(candles):
-    """
-    Calculate all necessary indicators for strategy
-    """
+Convert candles to DataFrame and calculate all required indicators (MA, RSI, ATR, MACD, etc.).
 
-    import pandas as pd
-    import numpy as np
-
-    # Convert to DataFrame
-    df = pd.DataFrame(candles)
-
-    # Calculate Moving Averages
-    df['sma_20'] = df['close'].rolling(window=20).mean()
-    df['sma_50'] = df['close'].rolling(window=50).mean()
-    df['sma_200'] = df['close'].rolling(window=200).mean()
-
-    # Calculate RSI
-    delta = df['close'].diff()
-    gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
-    loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
-    rs = gain / loss
-    df['rsi'] = 100 - (100 / (1 + rs))
-
-    # Calculate ATR
-    high_low = df['high'] - df['low']
-    high_close = np.abs(df['high'] - df['close'].shift())
-    low_close = np.abs(df['low'] - df['close'].shift())
-    ranges = pd.concat([high_low, high_close, low_close], axis=1)
-    true_range = ranges.max(axis=1)
-    df['atr'] = true_range.rolling(window=14).mean()
-
-    # Calculate MACD
-    ema_12 = df['close'].ewm(span=12, adjust=False).mean()
-    ema_26 = df['close'].ewm(span=26, adjust=False).mean()
-    df['macd'] = ema_12 - ema_26
-    df['macd_signal'] = df['macd'].ewm(span=9, adjust=False).mean()
-    df['macd_hist'] = df['macd'] - df['macd_signal']
-
-    # Identify crossovers
-    df['ma_cross_up'] = (df['sma_20'] > df['sma_50']) & \
-                        (df['sma_20'].shift(1) <= df['sma_50'].shift(1))
-    df['ma_cross_down'] = (df['sma_20'] < df['sma_50']) & \
-                          (df['sma_20'].shift(1) >= df['sma_50'].shift(1))
-
-    return df
-```
+📖 *See [resources/reference.md](resources/reference.md) for complete `prepare_backtest_data()` function*
 
 ### Scripts de Apoyo
 
@@ -193,206 +130,24 @@ print(result.total_return_pct, result.win_rate_pct, result.profit_factor)
 
 ### STEP 4: Run Backtest Simulation
 
-```python
-def run_backtest(df, strategy, initial_capital=10000):
-    """
-    Simulate trading strategy on historical data
-    """
+Iterate through historical candles, check entry/exit conditions, track positions, and record all trades with P&L.
 
-    results = {
-        'trades': [],
-        'equity_curve': [],
-        'daily_returns': []
-    }
+Use the `scripts/backtest_engine.py` which provides:
+- `run_backtest()`: Vectorized backtest execution
+- `default_ma_crossover()`: Example strategy
+- Automatic metrics calculation
 
-    capital = initial_capital
-    position = None
-    equity = [initial_capital]
-
-    for i in range(len(df)):
-        current = df.iloc[i]
-
-        # Skip if not enough history
-        if pd.isna(current['sma_200']):
-            continue
-
-        # Check for exit signals if in position
-        if position is not None:
-            exit_price = None
-            exit_reason = None
-
-            # Check stop loss
-            if position['type'] == 'long':
-                if current['low'] <= position['stop_loss']:
-                    exit_price = position['stop_loss']
-                    exit_reason = 'Stop Loss'
-            else:  # short
-                if current['high'] >= position['stop_loss']:
-                    exit_price = position['stop_loss']
-                    exit_reason = 'Stop Loss'
-
-            # Check take profit
-            if position['type'] == 'long':
-                if current['high'] >= position['take_profit']:
-                    exit_price = position['take_profit']
-                    exit_reason = 'Take Profit'
-            else:  # short
-                if current['low'] <= position['take_profit']:
-                    exit_price = position['take_profit']
-                    exit_reason = 'Take Profit'
-
-            # Exit if signal found
-            if exit_price:
-                # Calculate P&L
-                if position['type'] == 'long':
-                    pnl = (exit_price - position['entry']) * position['size']
-                else:  # short
-                    pnl = (position['entry'] - exit_price) * position['size']
-
-                capital += pnl
-
-                # Record trade
-                results['trades'].append({
-                    'entry_date': position['entry_date'],
-                    'exit_date': current['time'],
-                    'type': position['type'],
-                    'entry_price': position['entry'],
-                    'exit_price': exit_price,
-                    'exit_reason': exit_reason,
-                    'pnl': pnl,
-                    'pnl_percent': (pnl / position['risk']) * 100,
-                    'duration': i - position['entry_index']
-                })
-
-                position = None
-
-        # Check for entry signals if not in position
-        if position is None:
-            # Long entry
-            if (current['ma_cross_up'] and
-                current['rsi'] > 50 and
-                current['close'] > current['sma_200']):
-
-                # Calculate position size based on risk
-                risk_amount = capital * (strategy['risk_management']['risk_per_trade'] / 100)
-                stop_distance = 2 * current['atr']
-                stop_loss = current['close'] - stop_distance
-                take_profit = current['close'] + (3 * current['atr'])
-
-                position = {
-                    'type': 'long',
-                    'entry': current['close'],
-                    'entry_date': current['time'],
-                    'entry_index': i,
-                    'stop_loss': stop_loss,
-                    'take_profit': take_profit,
-                    'size': risk_amount / stop_distance,
-                    'risk': risk_amount
-                }
-
-            # Short entry
-            elif (current['ma_cross_down'] and
-                  current['rsi'] < 50 and
-                  current['close'] < current['sma_200']):
-
-                risk_amount = capital * (strategy['risk_management']['risk_per_trade'] / 100)
-                stop_distance = 2 * current['atr']
-                stop_loss = current['close'] + stop_distance
-                take_profit = current['close'] - (3 * current['atr'])
-
-                position = {
-                    'type': 'short',
-                    'entry': current['close'],
-                    'entry_date': current['time'],
-                    'entry_index': i,
-                    'stop_loss': stop_loss,
-                    'take_profit': take_profit,
-                    'size': risk_amount / stop_distance,
-                    'risk': risk_amount
-                }
-
-        # Track equity
-        if position:
-            # Mark-to-market
-            if position['type'] == 'long':
-                unrealized = (current['close'] - position['entry']) * position['size']
-            else:
-                unrealized = (position['entry'] - current['close']) * position['size']
-            equity.append(capital + unrealized)
-        else:
-            equity.append(capital)
-
-    results['equity_curve'] = equity
-    results['final_capital'] = capital
-
-    return results
-```
+📖 *See [resources/reference.md](resources/reference.md) for complete `run_backtest()` implementation*
 
 ### STEP 5: Calculate Performance Metrics
 
-```python
-def calculate_metrics(results, initial_capital):
-    """
-    Calculate comprehensive performance statistics
-    """
+Calculate all key metrics from trade results:
+- Win rate, profit factor, expectancy
+- Max drawdown, recovery factor
+- Consecutive wins/losses
+- Average R:R ratio
 
-    trades = results['trades']
-
-    if len(trades) == 0:
-        return "No trades generated"
-
-    # Basic stats
-    total_trades = len(trades)
-    winning_trades = [t for t in trades if t['pnl'] > 0]
-    losing_trades = [t for t in trades if t['pnl'] < 0]
-
-    win_rate = (len(winning_trades) / total_trades) * 100
-
-    # P&L stats
-    total_profit = sum(t['pnl'] for t in winning_trades)
-    total_loss = abs(sum(t['pnl'] for t in losing_trades))
-    net_profit = total_profit - total_loss
-
-    avg_win = total_profit / len(winning_trades) if winning_trades else 0
-    avg_loss = total_loss / len(losing_trades) if losing_trades else 0
-
-    # Profit factor
-    profit_factor = total_profit / total_loss if total_loss > 0 else float('inf')
-
-    # Expectancy
-    expectancy = (win_rate/100 * avg_win) - ((100-win_rate)/100 * avg_loss)
-
-    # Drawdown calculation
-    equity_curve = results['equity_curve']
-    running_max = np.maximum.accumulate(equity_curve)
-    drawdown = (equity_curve - running_max) / running_max * 100
-    max_drawdown = np.min(drawdown)
-
-    # Consecutive wins/losses
-    consecutive_wins = max_consecutive(trades, 'win')
-    consecutive_losses = max_consecutive(trades, 'loss')
-
-    # Risk/Reward
-    avg_rr = np.mean([abs(t['pnl']) / t['risk'] for t in winning_trades]) if winning_trades else 0
-
-    return {
-        'total_trades': total_trades,
-        'win_rate': round(win_rate, 2),
-        'profit_factor': round(profit_factor, 2),
-        'net_profit': round(net_profit, 2),
-        'net_profit_percent': round((net_profit / initial_capital) * 100, 2),
-        'avg_win': round(avg_win, 2),
-        'avg_loss': round(avg_loss, 2),
-        'expectancy': round(expectancy, 2),
-        'max_drawdown': round(max_drawdown, 2),
-        'recovery_factor': round(net_profit / abs(max_drawdown), 2) if max_drawdown != 0 else 0,
-        'consecutive_wins': consecutive_wins,
-        'consecutive_losses': consecutive_losses,
-        'avg_rr_ratio': round(avg_rr, 2),
-        'winning_trades': len(winning_trades),
-        'losing_trades': len(losing_trades)
-    }
-```
+📖 *See [resources/reference.md](resources/reference.md) for complete `calculate_metrics()` function*
 
 ### STEP 6: Present Results
 
@@ -570,89 +325,38 @@ If paper trading underperforms:
 This backtest provides guidance, not guarantees.
 ```
 
-## Strategy Optimization Process
+## Strategy Optimization
 
 ### Parameter Optimization
-```python
-def optimize_parameters(symbol, timeframe, data):
-    """
-    Test multiple parameter combinations
-    """
+Test multiple parameter combinations (MA periods, RSI thresholds, ATR multipliers) to find optimal settings. Sort results by profit factor or expectancy.
 
-    # Parameters to test
-    ma_periods = [(10,20), (20,50), (50,100), (50,200)]
-    rsi_thresholds = [(30,70), (40,60), (45,55)]
-    atr_multipliers = [(1.5,2.5), (2,3), (2.5,4)]
-
-    results = []
-
-    for ma in ma_periods:
-        for rsi in rsi_thresholds:
-            for atr in atr_multipliers:
-                # Run backtest with these parameters
-                strategy_result = run_backtest_with_params(
-                    data, ma, rsi, atr
-                )
-
-                results.append({
-                    'params': {'ma': ma, 'rsi': rsi, 'atr': atr},
-                    'metrics': calculate_metrics(strategy_result)
-                })
-
-    # Sort by profit factor or expectancy
-    results.sort(key=lambda x: x['metrics']['profit_factor'],
-                 reverse=True)
-
-    return results[:5]  # Top 5 combinations
-```
+⚠️ **Avoid overfitting**: Test on out-of-sample data, use walk-forward analysis.
 
 ### Walk-Forward Analysis
-```
-Instead of testing on all historical data:
-
-1. Split data into chunks:
-   - Training period: 12 months
-   - Testing period: 3 months
-   - Repeat rolling forward
-
+Prevents overfitting by testing strategy robustness:
+1. Split data: 12-month training + 3-month testing
 2. Optimize on training period
-3. Test on out-of-sample data
-4. Verify consistency across periods
+3. Test on out-of-sample period
+4. Roll forward and repeat
+5. Calculate Walk-Forward Efficiency (WFE)
 
-This prevents over-fitting!
-```
+**Acceptable degradation**: 10-30% between in-sample and out-sample
 
-## Integration with MetaTrader
+📖 *See [resources/reference.md](resources/reference.md) for optimization code & WFE calculations*
+
+## Complete Workflow Example
 
 ```python
-# Complete backtest workflow
+# 1. Get data
+candles = mcp__metatrader__get_candles_latest("EURUSD", "H4", 2000)
 
-# 1. Get historical data
-symbol = "EURUSD"
-timeframe = "H4"
-candles = metatrader:get_candles_latest(
-    symbol_name=symbol,
-    timeframe=timeframe,
-    count=2000  # ~330 days of H4 data
-)
-
-# 2. Prepare data
+# 2. Prepare & run
 df = prepare_backtest_data(candles)
-
-# 3. Define strategy
-strategy = define_strategy()
-
-# 4. Run backtest
 results = run_backtest(df, strategy, initial_capital=10000)
 
-# 5. Calculate metrics
+# 3. Calculate & present
 metrics = calculate_metrics(results, 10000)
-
-# 6. Present results
 display_backtest_report(metrics, results)
-
-# 7. Optimize if needed
-optimized = optimize_parameters(symbol, timeframe, df)
 ```
 
 ## Best Practices

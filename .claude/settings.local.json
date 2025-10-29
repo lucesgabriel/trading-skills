@@ -3,7 +3,14 @@
     "allow": [
       "Bash(git init:*)",
       "Bash(git remote add:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nInitial commit: Trading Skills System for Claude Code\n\nProfessional trading analysis system with 5 specialized skills:\n- Technical Analysis (multi-indicator, multi-timeframe)\n- Opportunity Scanner (automated market scanning)\n- Risk Management (position sizing, stop loss optimization)\n- Backtesting (strategy validation with historical data)\n- Advanced Analytics (patterns, correlations, statistics)\n\nFeatures:\n- MetaTrader 5 integration via MCP server\n- Comprehensive documentation and setup guides\n- Example scripts for EURUSD and GBPUSD analysis\n- Secure credential management (.mcp.json in .gitignore)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(for dir in */)",
+      "Bash(do echo \"=== $dir%/ ===\")",
+      "Bash(wc:*)",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []
