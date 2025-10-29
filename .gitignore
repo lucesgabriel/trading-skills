@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# Environment Variables
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node modules (if any)
+node_modules/
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Credentials (IMPORTANT: Never commit credentials)
+*password*
+*credentials*
+*.key
+*.pem
+
+# MetaTrader sensitive data (keep config structure, but ignore credentials)
+# Note: .mcp.json should be documented separately with placeholder values
+.mcp.json
