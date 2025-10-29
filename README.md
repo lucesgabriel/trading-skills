@@ -1,335 +1,222 @@
-# Trading Skills - Professional Trading Analysis System
+# Trading Pattern Scanner for Claude Code
 
-A comprehensive trading analysis and automation system built for Claude Code CLI with MetaTrader 5 integration. This project provides 5 specialized skills for technical analysis, market scanning, risk management, backtesting, and advanced analytics.
+[![Status](https://img.shields.io/badge/status-production-green)]()
+[![Python](https://img.shields.io/badge/python-3.10+-blue)]()
+[![MetaTrader](https://img.shields.io/badge/MetaTrader-5-orange)]()
+
+Professional candlestick pattern detection with **vibrant educational HTML reports**, multi-timeframe analysis, and comprehensive trading setups.
+
+## Overview
+This repository contains a suite of Claude Code skills tailored for discretionary and systematic traders. The centerpiece is the **Pattern Scanner**, which delivers weighted probability scoring, robust data validation, and a beautiful educational HTML experience with vibrant design. Companion skills cover technical analysis, opportunity scanning, risk management, and backtesting, all designed to work with MetaTrader 5 MCP servers.
+
+## Skill Lineup
+- **Pattern Scanner** – multi-timeframe candlestick detection, probability scoring, and HTML reporting
+- **Technical Analysis** – indicator snapshots, confluence scoring, and trend diagnostics
+- **Opportunity Scanner** – multi-symbol ranking with probability filters
+- **Risk Management** – position sizing and trade management utilities
+- **Backtesting & Advanced Analytics** – strategy validation and statistical tooling
 
 ## Features
 
-### 5 Professional Trading Skills
+### Pattern Detection
+- **12 Candlestick Patterns**: Bullish/Bearish Engulfing, Morning/Evening Star, Hammer, Shooting Star, Doji, Harami, Three Soldiers/Crows, Spinning Top
+- **Multi-Timeframe Analysis**: M15, H1, H4, D1 with weighted confluence
+- **Probability Scoring**: Weighted confluence D1 (40%), H4 (30%), H1 (20%), M15 (10%)
+- **Data Validation**: Ensures >= 50 candles before processing each timeframe
 
-1. **Technical Analysis** 📊
-   - Multi-timeframe analysis (M15, H1, H4, Daily)
-   - Multiple indicators: MA, EMA, MACD, RSI, Stochastic, Bollinger Bands, ATR
-   - Success probability calculation (30-85%)
-   - Support/resistance level identification
-   - Entry/exit recommendations with risk-reward ratios
+### Beautiful HTML Reports
+- **Vibrant Design**: Purple/violet gradient background (#667eea → #764ba2) with white container
+- **Educational Content**: Each pattern includes emoji and detailed explanation
+- **Interactive Charts**: Chart.js candlestick visualization with pattern markers
+- **Progress Bars**: Gradient-filled indicators for RSI, MACD, Stochastic
+- **Comprehensive Sections**:
+  - Summary Stats (4 stat boxes)
+  - Pattern Cards with emojis and gradients (green for bullish, red for bearish)
+  - Technical Indicators with visual progress bars
+  - Support/Resistance table
+  - Trading Signal (large, prominent box)
+  - Complete Trading Setup (Entry/SL/TP1/TP2/TP3)
+  - **Risk Management** (NEW: position sizing, rules)
+  - **Warnings & Risk Factors** (NEW: invalidation signals)
+  - **Executive Summary** (NEW: final recommendation)
+  - Disclaimer
 
-2. **Opportunity Scanner** 🔍
-   - Automatic scanning of 15+ symbols (EURUSD, GBPUSD, XAUUSD, etc.)
-   - Probability-based ranking
-   - Customizable filters
-   - High-probability setup identification (>70%)
+### Technical Analysis
+- **Indicator Meters**: RSI, MACD, Stochastic, Trend analysis
+- **Support/Resistance**: Auto-calculated S/R levels with pip distances
+- **Trading Setup**: Auto-generated entry points, stop loss, take profits with risk:reward ratios
+- **Position Sizing**: Calculated for different account sizes ($10k, $1k)
 
-3. **Risk Management** 🛡️
-   - Automatic position sizing calculation
-   - Optimal stop loss placement (ATR-based, technical, percentage)
-   - Multiple take profit strategies (R:R, scaling, trailing)
-   - Portfolio exposure evaluation
+### Safety & Reliability
+- **Unicode-Safe Output**: Prevents encoding errors on Windows terminals
+- **Safe Print Function**: Automatic fallback for console incompatibilities
+- **Error Handling**: Robust validation and graceful degradation
 
-4. **Backtesting** 📈
-   - Historical strategy validation
-   - Key metrics: Win Rate, Profit Factor, Expectancy, Drawdown
-   - Parameter optimization
-   - Walk-forward analysis
+## Quick Start
 
-5. **Advanced Analytics** 🎯
-   - Advanced statistics: Sharpe, Sortino, Calmar ratios
-   - 13+ candlestick pattern detection
-   - Portfolio correlation analysis
-   - Monte Carlo simulations
-   - Risk of Ruin calculations
-
-## Requirements
-
-- **Claude Code CLI** - [Download](https://docs.claude.com/claude-code)
-- **MetaTrader 5** - Trading platform
-- **Python 3.8+** - For analytics scripts
-- **MetaTrader MCP Server** - Integration bridge
-
-### Python Dependencies
-
-```bash
-pip install pandas numpy
+### Via Claude Code (Recommended)
+```
+scan EURUSD for patterns
 ```
 
-## Installation
+Claude will automatically:
+1. Fetch live price data from MetaTrader 5
+2. Analyze candlestick patterns across M15, H1, H4, D1 timeframes
+3. Calculate confluence scores and probabilities
+4. Generate a beautiful HTML report in `reports/`
+5. Open the report automatically
 
-### 1. Clone the Repository
-
+### Via Python
 ```bash
-git clone https://github.com/lucesgabriel/trading-skills.git
-cd trading-skills
+# Quick analysis
+python examples/quick_start.py EURUSD
+
+# Advanced multi-symbol scan
+python examples/advanced_example.py
+
+# Batch scanning
+python tools/batch_scanner.py EURUSD GBPUSD XAUUSD --open
 ```
 
-### 2. Install MetaTrader MCP Server
-
-```bash
-npm install -g metatrader-mcp-server
-```
-
-### 3. Configure MetaTrader Connection
-
-Copy the example configuration and edit with your credentials:
-
-```bash
-cp .mcp.json.example .mcp.json
-```
-
-Then edit `.mcp.json` with your MetaTrader credentials:
-
+### MCP Configuration
+Enable required MCP permissions in `.claude/settings.local.json`:
 ```json
 {
-  "mcpServers": {
-    "metatrader": {
-      "command": "metatrader-mcp-server",
-      "args": [
-        "--login", "YOUR_ACCOUNT_NUMBER",
-        "--password", "YOUR_PASSWORD",
-        "--server", "YOUR_BROKER_SERVER",
-        "--path", "PATH_TO_MT5_TERMINAL"
-      ]
-    }
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": ["metatrader"],
+  "permissions": {
+    "allow": [
+      "mcp__metatrader__get_symbol_price",
+      "mcp__metatrader__get_candles_latest"
+    ]
   }
 }
 ```
 
-**IMPORTANT**: The `.mcp.json` file is in `.gitignore` to protect your credentials. Never commit this file with real credentials.
+Then restart Claude Code to load the updated skills.
 
-### 4. Copy Skills to Claude Code
+## CLI Tools
+- `python tools/standalone_scanner.py EURUSD --timeframes M15,H1,H4,D1`
+  - Optional `--sample-data path/to/EURUSD.json` to run offline fixtures
+- `python tools/batch_scanner.py EURUSD GBPUSD XAUUSD --open`
+  - Optional `--sample-dir data/samples` for per-symbol JSON inputs
 
-The `.claude/skills/` directory contains all skills. Claude Code will automatically detect them.
+Both commands write reports to `reports/` and reuse the same core modules as the skill.
 
-### 5. Configure Permissions
+## Repository Layout
+```
+.claude/skills/
+  pattern-scanner/       # Candlestick pattern detection (v2.2.1 - refined temp script approach)
+    scripts/             # Core detection, confluence, HTML generation
+    resources/           # Documentation and troubleshooting
+  technical-analysis/    # Technical indicators and analysis
+  opportunity-scanner/   # Multi-symbol market scanning
+  risk-management/       # Position sizing and portfolio risk
+  backtesting/          # Strategy validation with historical data
+  advanced-analytics/    # Statistical analysis and correlations
+examples/               # Usage examples (see examples/README.md)
+  legacy/              # Historical examples for reference
+reports/               # Generated HTML reports (gitignored)
+tests/                 # Integration tests
+tools/                 # Standalone CLI scanners (batch and single-symbol)
+docs/                  # Project documentation
+  development/         # Development notes and implementation details
+  testing/             # Testing guides and validation
+  examples/            # Example code and references
+```
 
-Edit `.claude/settings.local.json` to grant necessary permissions for the skills to access MetaTrader data.
+## Requirements
+- Python 3.10+
+- Dependencies: Install via `pip install -r requirements.txt`
+  - pandas >= 2.0.0
+  - numpy >= 1.24.0
+- MetaTrader 5 terminal running and connected to the MCP server
+- Claude Code CLI v2 or later
 
-## Usage
-
-### Using Skills in Claude Code
-
-Once installed, you can invoke skills directly in Claude Code CLI:
-
+### Installation
 ```bash
-# Technical analysis
-/technical-analysis EURUSD
+# Install Python dependencies
+pip install -r requirements.txt
 
-# Scan market for opportunities
-/opportunity-scanner
+# Configure MCP server
+# Edit .claude/settings.local.json to enable MetaTrader MCP server
+# See MCP Configuration section above
 
-# Calculate position size
-/risk-management GBPUSD 1000 2
-
-# Backtest a strategy
-/backtesting XAUUSD "2023-01-01" "2023-12-31"
-
-# Advanced analytics
-/advanced-analytics
+# Restart Claude Code to load skills
 ```
 
-### Running Example Scripts
+## Example Output
 
-The `examples/` directory contains sample analysis scripts:
+When you run a pattern scan, you'll get:
 
-```bash
-# Analyze EURUSD
-python examples/eurusd_full_analysis.py
-
-# Analyze GBPUSD
-python examples/gbpusd_full_analysis.py
+**Console Output:**
+```
+📊 Escaneando EURUSD para patrones de velas...
+✅ Patrones detectados: 2
+💡 Señal: BUY (LONG) - BULLISH
+📈 Probabilidad: 68%
+📊 Reporte HTML generado: reports/EURUSD_pattern_scan_20251029_140610.html
 ```
 
-## Project Structure
-
-```
-trading-skills/
-├── .claude/
-│   ├── settings.local.json      # Claude Code permissions
-│   └── skills/                  # 5 trading skills
-│       ├── README.md            # Skills overview
-│       ├── technical-analysis/
-│       │   ├── SKILL.md
-│       │   ├── scripts/
-│       │   │   └── indicator_suite.py
-│       │   └── resources/       # 📚 NEW: Progressive disclosure
-│       │       ├── examples.md
-│       │       ├── troubleshooting.md
-│       │       └── reference.md (planned)
-│       ├── opportunity-scanner/
-│       │   ├── SKILL.md
-│       │   ├── scripts/
-│       │   │   └── market_scanner.py
-│       │   └── resources/
-│       │       ├── examples.md
-│       │       └── troubleshooting.md
-│       ├── risk-management/
-│       │   ├── SKILL.md
-│       │   ├── scripts/
-│       │   │   └── position_sizing.py
-│       │   └── resources/
-│       │       ├── examples.md
-│       │       └── troubleshooting.md
-│       ├── backtesting/
-│       │   ├── SKILL.md
-│       │   ├── scripts/
-│       │   │   └── backtest_engine.py
-│       │   └── resources/
-│       │       ├── examples.md
-│       │       ├── troubleshooting.md
-│       │       └── reference.md
-│       └── advanced-analytics/
-│           ├── SKILL.md
-│           ├── scripts/
-│           │   ├── advanced_statistics.py
-│           │   ├── pattern_recognition.py
-│           │   ├── correlation_analysis.py
-│           │   └── volatility_analysis.py
-│           └── resources/
-│               ├── examples.md
-│               └── troubleshooting.md
-├── examples/
-│   ├── eurusd_analysis.py       # Basic EURUSD analysis
-│   ├── eurusd_full_analysis.py  # Complete EURUSD analysis
-│   └── gbpusd_full_analysis.py  # Complete GBPUSD analysis
-├── .gitignore
-├── .mcp.json.example            # Template for MCP configuration
-├── README.md                    # This file
-├── PROYECTO_COMPLETADO.md       # Project completion report
-└── SKILLS_MCP_SETUP.md          # Detailed setup guide
-```
-
-### Progressive Disclosure Architecture
-
-Following Anthropic's best practices, each skill now implements **progressive disclosure**:
-
-1. **SKILL.md** (<5k tokens): Core instructions and workflow
-2. **scripts/**: Executable Python code (loaded on-demand)
-3. **resources/**: Reference documentation (loaded only when referenced)
-   - `examples.md`: 3-5 detailed usage examples with input/output
-   - `troubleshooting.md`: Common issues and solutions
-   - `reference.md`: Complete technical implementation (where applicable)
-
-This structure ensures "only relevant content occupies the context window at any given time."
+**HTML Report:**
+- Vibrant purple/violet gradient background
+- Large price display with color coding (green for up, red for down)
+- 4 summary stat boxes
+- Pattern cards with emojis (🔥 for Bullish Engulfing, 📈 for Bullish Harami, etc.)
+- Interactive candlestick chart
+- Progress bars with gradients for all indicators
+- Complete trading setup with Entry/SL/TP1/TP2/TP3
+- Risk management guidance
+- Warnings and invalidation signals
+- Executive summary with final recommendation
 
 ## Documentation
 
-### Main Documentation
-- **[PROYECTO_COMPLETADO.md](PROYECTO_COMPLETADO.md)** - Complete project report with objectives and metrics
-- **[SKILLS_MCP_SETUP.md](SKILLS_MCP_SETUP.md)** - Detailed configuration guide with troubleshooting
-- **[.claude/skills/README.md](.claude/skills/README.md)** - Skills overview and usage
+- `.claude/skills/pattern-scanner/SKILL.md` - Skill configuration and triggers
+- `.claude/skills/pattern-scanner/resources/pattern_reference.md` - Pattern details
+- `.claude/skills/pattern-scanner/resources/troubleshooting.md` - Common issues
+- `examples/` - Example scripts and usage patterns
 
-### Skill-Specific Resources
+## Changelog
 
-Each skill includes comprehensive documentation in its `resources/` directory:
+### 2025-10-29 (v2.2.1 - Pragmatic Refinement)
+**Learning from v3.0 Failure + Project Optimization**
+- ✅ **Temp script approach refined** - Added timestamps, robust cleanup, better error handling
+- ✅ **Organized project structure** - Created docs/ hierarchy (development/, testing/, examples/)
+- ✅ **Cleaned root directory** - Removed 4 obsolete test scripts
+- ✅ **Consolidated examples** - Moved legacy examples to examples/legacy/
+- ✅ **Added requirements.txt** - Proper dependency management
+- ✅ **Updated .gitignore** - Added skills __pycache__ and temp files exclusions
+- ✅ **Improved documentation** - Created examples/README.md, LESSONS_LEARNED.md
+- 🎓 **Key learning:** v3.0 Python one-liner FAILED in production
+  - Problems: Quote escaping, multiline data, shell incompatibility
+  - Lesson: **Pragmatism > Theoretical Purity**
+  - Reality: Temp files are acceptable when they're the best solution
+- 📚 **Documentation reorganization** - All Spanish docs moved to docs/ structure
 
-**For Learning & Examples:**
-- Read `resources/examples.md` for 3-5 detailed use cases with expected input/output
-- Examples cover basic usage, advanced scenarios, and edge cases
+### 2025-10-29 (v3.0 - EXPERIMENT FAILED)
+**Attempted:** Eliminate temp files with Python one-liners
+**Result:** Failed due to bash quote escaping nightmares, multiline CSV issues, command length limits
+**Lesson:** Don't chase theoretical purity. Use what works reliably.
 
-**For Troubleshooting:**
-- Check `resources/troubleshooting.md` for common issues and solutions
-- Includes diagnostic checklists and quick fixes
+### 2025-10-29 (v2.2 - Session 2)
+**Complete HTML rewrite with vibrant design**
+- Adopted purple/violet gradient background (#667eea → #764ba2)
+- Added pattern emojis and educational explanations
+- Implemented 3 NEW sections: Risk Management, Warnings, Executive Summary
+- Progress bars now use gradients (90deg)
+- Pattern cards with color gradients (green/red/orange)
+- Large, prominent signal box
+- Unicode-safe console output with safe_print()
 
-**For Technical Details:**
-- Refer to `resources/reference.md` (where available) for complete implementations
-- Contains formulas, algorithms, and detailed code examples
-
-**Example:**
-```
-Need help with position sizing calculation?
-→ Read .claude/skills/risk-management/resources/examples.md
-→ See Example 1: "Basic Position Sizing"
-
-Getting errors in backtest?
-→ Check .claude/skills/backtesting/resources/troubleshooting.md
-→ Look for "Issue 3: Results don't match forward testing"
-```
-
-## Configuration
-
-### MetaTrader 5 Setup
-
-1. Install MetaTrader 5 from your broker
-2. Create a demo or real account
-3. Note your account credentials
-4. Update `.mcp.json` with your details
-
-### Claude Code Skills
-
-Skills are automatically loaded from `.claude/skills/`. Each skill has:
-- `SKILL.md` - Skill definition with YAML frontmatter
-- `scripts/` - Python scripts for calculations
-
-## Examples
-
-### Basic Technical Analysis
-
-```bash
-# Get technical analysis for EURUSD
-/technical-analysis EURUSD
-```
-
-Expected output:
-- Trend analysis across multiple timeframes
-- Indicator signals (MA, MACD, RSI, etc.)
-- Success probability
-- Entry/exit recommendations
-- Risk-reward ratios
-
-### Market Scanning
-
-```bash
-# Scan all major pairs
-/opportunity-scanner
-```
-
-Gets ranked list of trading opportunities sorted by probability.
-
-### Position Sizing
-
-```bash
-# Calculate position size
-# Symbol: GBPUSD, Account: $10000, Risk: 2%
-/risk-management GBPUSD 10000 2
-```
-
-Returns optimal lot size and stop loss placement.
-
-## Troubleshooting
-
-### MetaTrader Connection Issues
-
-1. Verify MT5 is running
-2. Check credentials in `.mcp.json`
-3. Ensure `metatrader-mcp-server` is installed
-4. Check firewall settings
-
-### Skills Not Loading
-
-1. Verify `.claude/skills/` directory structure
-2. Check YAML frontmatter in `SKILL.md` files
-3. Review `.claude/settings.local.json` permissions
-
-### Python Script Errors
-
-1. Install required dependencies: `pip install pandas numpy`
-2. Verify Python 3.8+ is installed
-3. Check MetaTrader connection
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit issues or pull requests.
-
-## License
-
-This project is for educational and research purposes. Always backtest strategies before using real capital.
+### 2025-10-29 (v2.1 - Session 1)
+**Reworked pattern-scanner architecture**
+- Fixed Unicode encoding bugs
+- Added examples (`quick_start.py`, `advanced_example.py`)
+- Improved project structure
+- Added `.gitignore`
+- Optimized SKILL.md with Anthropic best practices
 
 ## Disclaimer
 
-Trading involves risk. This software is provided "as is" without warranty. Always use proper risk management and never risk more than you can afford to lose.
-
----
-
-**Author**: Gabriel Luces
-**Repository**: [github.com/lucesgabriel/trading-skills](https://github.com/lucesgabriel/trading-skills)
-**Date**: October 2025
-
-For detailed configuration and troubleshooting, see [SKILLS_MCP_SETUP.md](SKILLS_MCP_SETUP.md)
+This analysis is for **educational purposes only** and does not constitute financial advice. Candlestick patterns and technical analysis are probabilistic, not guarantees. Forex trading involves significant risk of loss. Always trade with capital you can afford to lose and use proper risk management. Past results do not guarantee future performance. Consult with a qualified financial advisor before making investment decisions.

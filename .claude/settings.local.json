@@ -10,7 +10,22 @@
       "Bash(for dir in */)",
       "Bash(do echo \"=== $dir%/ ===\")",
       "Bash(wc:*)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(git commit:*)",
+      "Bash(start \"\" \"D:\\Programing Language html css js php DB\\28102025\\eurusd_pattern_report.html\")",
+      "Bash(start \"\" \"D:\\Programing Language html css js php DB\\28102025\\reports\\EURUSD_pattern_scan_20251029_104643.html\")",
+      "Skill(pattern-scanner)",
+      "mcp__metatrader__get_symbol_price",
+      "mcp__metatrader__get_candles_latest",
+      "Bash(python:*)",
+      "Bash(start \"\" \"D:\\Programing Language html css js php DB\\28102025\\reports\\EURUSD_pattern_scan_20251029_105420.html\")",
+      "Bash(dir:*)",
+      "Bash(start \"\" \"D:\\Programing Language html css js php DB\\28102025\\reports\\EURUSD_pattern_scan_20251029_140610.html\")",
+      "Bash(findstr:*)",
+      "Bash(start \"\" \"D:\\Programing Language html css js php DB\\28102025\\reports\\EURUSD_pattern_scan_20251029_151618.html\")",
+      "Bash(start \"\" \"D:\\Programing Language html css js php DB\\28102025\\reports\\EURUSD_pattern_scan_20251029_152821.html\")",
+      "Bash(del:*)",
+      "Bash(start \"\" \"D:\\Programing Language html css js php DB\\28102025\\reports\\EURUSD_pattern_scan_20251029_164300.html\")"
     ],
     "deny": [],
     "ask": []

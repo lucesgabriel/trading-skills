@@ -4,46 +4,49 @@ __pycache__/
 *$py.class
 *.so
 .Python
+env/
+venv/
 *.egg-info/
 dist/
 build/
 
-# Virtual Environment
-venv/
-env/
-ENV/
+# Skills cache and temporary files
+.claude/skills/*/scripts/__pycache__/
+.claude/skills/*/scripts/temp_*.py
+.claude/skills/*/scripts/temp_*.json
 
-# Environment Variables
-.env
-.env.local
-
-# IDE
+# IDEs
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
 
-# OS
-.DS_Store
-Thumbs.db
+# Reports (local only)
+reports/*.html
 
-# Node modules (if any)
-node_modules/
+# Data files (local only)
+*.json
+*.csv
 
 # Logs
 *.log
 
-# Temporary files
-*.tmp
-*.temp
-
-# Credentials (IMPORTANT: Never commit credentials)
-*password*
-*credentials*
-*.key
-*.pem
-
-# MetaTrader sensitive data (keep config structure, but ignore credentials)
-# Note: .mcp.json should be documented separately with placeholder values
+# Sensitive (MCP credentials)
 .mcp.json
+.env
+.claude/settings.local.json
+credentials.json
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary
+*.tmp
+*.bak
+*.old
+~*
+
+# Legacy reference
+examples/legacy/*.html
