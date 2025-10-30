@@ -139,21 +139,69 @@ Both commands accept `--sample-data` or `--sample-dir` for offline fixtures.
 
 ## Execution Instructions
 
-When user requests a pattern scan, follow this workflow:
+When user requests a pattern scan, follow this 3-step workflow:
 
-1. **Fetch Market Data** - Make 5 parallel MCP calls (price + 4 timeframes)
-2. **Create Temp Script** - Write temporary Python file with embedded MCP data using `repr()`
-3. **Execute & Cleanup** - Run script with `python temp_scan_{timestamp}.py` and delete after
-4. **Report Results** - Display summary and HTML report path
+### Step 1: Fetch Market Data from MCP
 
-For detailed step-by-step instructions, see [Execution Guide](resources/execution-guide.md).
+Make 5 parallel MCP calls:
+```
+price_data = mcp__metatrader__get_symbol_price(symbol_name: "EURUSD")
+m15_data = mcp__metatrader__get_candles_latest(symbol_name: "EURUSD", timeframe: "M15", count: 100)
+h1_data = mcp__metatrader__get_candles_latest(symbol_name: "EURUSD", timeframe: "H1", count: 100)
+h4_data = mcp__metatrader__get_candles_latest(symbol_name: "EURUSD", timeframe: "H4", count: 100)
+d1_data = mcp__metatrader__get_candles_latest(symbol_name: "EURUSD", timeframe: "D1", count: 100)
+```
 
-**Quick Reference:**
-- **Method:** Create temp file `.claude/skills/pattern-scanner/scripts/temp_scan_{timestamp}.py`
-- **Content:** Use `repr(mcp_data)` to embed data, import `run_pattern_scan` function
-- **Execute:** `python temp_scan_{timestamp}.py`
-- **Cleanup:** Delete temp file after execution
-- **Why temp files:** Handles large datasets (100 candles × 4 timeframes) reliably, avoids bash quote escaping issues
+### Step 2: Create Temporary Python Script
+
+Use Write tool to create `.claude/skills/pattern-scanner/scripts/temp_scan_{timestamp}.py` with this **EXACT** template:
+
+```python
+#!/usr/bin/env python3
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent))
+from run_scan import run_pattern_scan
+
+# Extract CSV strings from MCP responses
+csv_m15 = m15_data["result"] if isinstance(m15_data, dict) else m15_data
+csv_h1 = h1_data["result"] if isinstance(h1_data, dict) else h1_data
+csv_h4 = h4_data["result"] if isinstance(h4_data, dict) else h4_data
+csv_d1 = d1_data["result"] if isinstance(d1_data, dict) else d1_data
+
+# Prepare MCP data in correct format
+mcp_data = {
+    "price": price_data,              # Full price dict from get_symbol_price
+    "candles_m15": csv_m15,           # CSV string from get_candles_latest
+    "candles_h1": csv_h1,             # CSV string from get_candles_latest
+    "candles_h4": csv_h4,             # CSV string from get_candles_latest
+    "candles_d1": csv_d1              # CSV string from get_candles_latest
+}
+
+# Run scanner - MUST pass symbol AND mcp_data
+report_path = run_pattern_scan("EURUSD", mcp_data)
+print(f"\\n✅ Report: {report_path}")
+```
+
+**CRITICAL:** Replace variables (m15_data, h1_data, etc.) with actual MCP response data using `repr()`.
+
+### Step 3: Execute and Cleanup
+
+```bash
+# Execute (Windows)
+python .claude/skills/pattern-scanner/scripts/temp_scan_{timestamp}.py
+
+# Cleanup (Windows)
+del .claude\skills\pattern-scanner\scripts\temp_scan_{timestamp}.py
+```
+
+**Important Notes:**
+- ✅ Import is `from run_scan import run_pattern_scan` (NOT from pattern_scanner)
+- ✅ Keys must be `candles_m15`, `candles_h1`, `candles_h4`, `candles_d1` (with candles_ prefix)
+- ✅ Function call is `run_pattern_scan(symbol, mcp_data)` (pass symbol separately)
+- ✅ MCP returns CSV in dict with "result" key - extract it first
+
+For detailed explanation, see [Execution Guide](resources/execution-guide.md).
 
 ## Version History
 
