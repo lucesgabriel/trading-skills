@@ -1,0 +1,9 @@
+# Temporary analysis files
+# Conservar últimos 3 análisis para debugging
+
+# Ignore all temp files
+*.csv
+*.py
+
+# Except this gitignore
+!.gitignore

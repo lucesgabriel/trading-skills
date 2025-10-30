@@ -359,7 +359,26 @@ Percentage Stop: 1-3% from entry
 
 ## Execution Instructions
 
-When user requests technical analysis (e.g., "analyze EURUSD", "technical analysis for GBPUSD"), follow this 3-step workflow:
+When user requests technical analysis (e.g., "analyze EURUSD", "technical analysis for GBPUSD"), follow this workflow:
+
+### 🔇 Silent Execution Mode
+
+**IMPORTANT**: Provide clean user experience by minimizing intermediate output:
+
+❌ **DO NOT show to user:**
+- "Creating temp_analysis_xxx.py..."
+- "Writing CSV files..."
+- "Executing analysis..."
+- File write operations
+- Intermediate steps
+
+✅ **ONLY show to user:**
+- Final analysis output
+- Structured error messages (ERR_TA_xxx) if validation fails
+
+**Implementation**: Use single Bash command to write files and execute script. Use generic description like "Running technical analysis" or empty string.
+
+---
 
 ### Step 1: Fetch Market Data from MCP
 
@@ -375,16 +394,15 @@ d1_data = mcp__metatrader__get_candles_latest(symbol_name: "EURUSD", timeframe: 
 
 **Important:** Request 250 candles to ensure enough data for 200-period moving averages and other indicators.
 
-### Step 2: Create Temporary Python Script
+### Step 1.5: Validate Data (Fail-Fast)
 
-Use Write tool to create `.claude/skills/technical-analysis/scripts/temp_analysis_{timestamp}.py` with this **EXACT** template:
+Before creating any files, validate the data to ensure clean execution:
 
 ```python
-#!/usr/bin/env python3
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent))
-from run_analysis import run_technical_analysis
+sys.path.insert(0, str(Path(".claude/skills/technical-analysis/scripts")))
+from validation import validate_all_timeframes, ValidationError
 
 # Extract CSV strings from MCP responses
 csv_m15 = m15_data["result"] if isinstance(m15_data, dict) else m15_data
@@ -392,79 +410,179 @@ csv_h1 = h1_data["result"] if isinstance(h1_data, dict) else h1_data
 csv_h4 = h4_data["result"] if isinstance(h4_data, dict) else h4_data
 csv_d1 = d1_data["result"] if isinstance(d1_data, dict) else d1_data
 
-# Prepare MCP data in correct format
-mcp_data = {
-    "price": price_data,           # Full price dict from get_symbol_price
-    "candles_m15": csv_m15,        # CSV string from get_candles_latest
-    "candles_h1": csv_h1,          # CSV string from get_candles_latest
-    "candles_h4": csv_h4,          # CSV string from get_candles_latest
-    "candles_d1": csv_d1           # CSV string from get_candles_latest
-}
+# Validate before creating files
+try:
+    validate_all_timeframes({
+        "candles_m15": csv_m15,
+        "candles_h1": csv_h1,
+        "candles_h4": csv_h4,
+        "candles_d1": csv_d1
+    })
+except ValidationError as e:
+    # Show structured error and abort
+    print(f"[!] {e}")
+    print(f"\nSolution:")
+    if e.code == "ERR_TA_001":
+        print("  - Check MetaTrader connection")
+        print("  - Verify symbol is valid and has historical data")
+        print("  - Try requesting fewer candles (count=100)")
+    elif e.code == "ERR_TA_002":
+        print("  - Verify MCP server is responding correctly")
+        print("  - Check network connectivity")
+    elif e.code == "ERR_TA_003":
+        print("  - Update MetaTrader to latest version")
+        print("  - Verify MCP server compatibility")
+    return  # Abort execution
+```
 
-# Run analysis - MUST pass symbol AND mcp_data
-result = run_technical_analysis("EURUSD", mcp_data)
+**Error Codes:**
+- `ERR_TA_001`: Insufficient or missing data
+- `ERR_TA_002`: Invalid CSV format
+- `ERR_TA_003`: Missing required columns
+
+### Step 2: Write CSV Data to External Files
+
+Create temp directory and write CSV files (cleaner than embedding in Python):
+
+```python
+from datetime import datetime
+from pathlib import Path
+
+# Setup temp directory
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+temp_dir = Path(".claude/skills/technical-analysis/scripts/temp")
+temp_dir.mkdir(exist_ok=True)
+
+# Write each timeframe to separate file
+csv_files = {}
+for tf, csv_data in [("m15", csv_m15), ("h1", csv_h1), ("h4", csv_h4), ("d1", csv_d1)]:
+    csv_file = temp_dir / f"{tf}_{timestamp}.csv"
+    csv_file.write_text(csv_data)
+    csv_files[tf] = csv_file.name
+
+# Cleanup old analyses (keep last 3 for debugging)
+from run_analysis import cleanup_old_analyses
+cleanup_old_analyses(temp_dir, keep=3)
+```
+
+**Benefits:**
+- Temp script stays small (~1KB vs 7-21KB)
+- No string escaping issues
+- Easy to debug (can inspect CSV files)
+- Clear separation of data vs code
+
+### Step 3: Create Minimal Temporary Python Script
+
+Create `.claude/skills/technical-analysis/scripts/temp/analysis_{timestamp}.py`:
+
+```python
+#!/usr/bin/env python3
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from run_analysis import run_technical_analysis
+
+# Price data from MCP
+price_data = {price_data}
+
+# Load CSV data from external files
+temp_dir = Path(__file__).parent
+mcp_data = {{
+    "price": price_data,
+    "candles_m15": (temp_dir / "{csv_files['m15']}").read_text(),
+    "candles_h1": (temp_dir / "{csv_files['h1']}").read_text(),
+    "candles_h4": (temp_dir / "{csv_files['h4']}").read_text(),
+    "candles_d1": (temp_dir / "{csv_files['d1']}").read_text()
+}}
+
+# Run analysis
+result = run_technical_analysis("{symbol}", mcp_data)
 
 # Print formatted output
 print(result["formatted_output"])
 ```
 
-**Critical Notes:**
-- Replace `"EURUSD"` with the actual symbol requested by user
-- Replace variable names (`m15_data`, `h1_data`, etc.) with actual variable names from Step 1
-- Do NOT modify the structure - `run_analysis.py` expects this exact format
-- The script is intentionally small (15 lines) - all logic is in `run_analysis.py`
+**Script size:** ~30 lines (~1KB) vs old approach 300+ lines (7-21KB)
 
-### Step 3: Execute Script and Present Results
+### Step 4: Execute Script Silently
 
-Execute the temporary script:
+Execute in single Bash command (don't show intermediate steps):
+
 ```bash
-python ".claude/skills/technical-analysis/scripts/temp_analysis_{timestamp}.py"
+python ".claude/skills/technical-analysis/scripts/temp/analysis_{timestamp}.py"
 ```
 
+**User sees:** Only the final formatted analysis output
+
 **Expected Output:**
-The script will print a formatted technical analysis including:
-- Current market situation (price, ATR, volatility)
-- Multi-timeframe analysis (M15, H1, H4, D1)
-- Indicator readings (RSI, MACD, MAs, Bollinger Bands, Stochastic)
-- Multi-timeframe confluence (overall bias and probability)
-- Support/Resistance levels
-- Trading recommendation (LONG/SHORT/WAIT)
-- Complete trading setup (Entry, SL, TP1, TP2, Risk:Reward)
-- Execution instructions
-- Risk management warnings
+```
+======================================================================
+TECHNICAL ANALYSIS: EURUSD
+======================================================================
 
-**Present to User:**
-1. Copy the formatted output from the script
-2. Optionally add brief commentary about key points
-3. Answer any follow-up questions about the analysis
+CURRENT SITUATION
+Price: 1.15747
+ATR: 0.00141 (14 pips)
+Volatility: compressed
 
-**Example Workflow:**
+MULTI-TIMEFRAME ANALYSIS
+[... complete analysis ...]
+
+TRADING RECOMMENDATION
+Signal: LONG
+Entry: 1.15747
+Stop Loss: 1.15470 (27 pips)
+Take Profit 1: 1.16029 (28 pips)
+Take Profit 2: 1.16689 (94 pips)
+Risk:Reward: 1:3.4
+
+[... execution instructions and risk warnings ...]
+======================================================================
+```
+
+---
+
+## Workflow Summary
 
 ```
 User: "analyze EURUSD"
 
-Step 1: Fetch MCP data (5 parallel calls)
-→ price_data, m15_data, h1_data, h4_data, d1_data
+Step 1: Fetch MCP data (5 parallel calls) → price + 4 timeframes
+Step 1.5: Validate data (fail-fast if issues)
+Step 2: Write 4 CSV files to temp/
+Step 3: Create minimal Python script (~1KB)
+Step 4: Execute script silently
 
-Step 2: Create temp_analysis_20251030_160000.py with template
-→ 15 lines, imports run_analysis.py
-
-Step 3: Execute script
-→ python temp_analysis_20251030_160000.py
-→ Formatted analysis printed to console
-
-Step 4: Present results to user
-→ Copy output, add commentary if needed
+User sees: → [Clean analysis output]
 ```
 
-**Troubleshooting:**
+**Before (verbose):**
+- Multiple failed attempts
+- 7+ intermediate messages
+- Error messages shown
+- Scripts 7-21KB
 
-| Issue | Cause | Solution |
-|-------|-------|----------|
-| `ModuleNotFoundError: run_analysis` | Script not in correct directory | Ensure temp script is in `.claude/skills/technical-analysis/scripts/` |
-| `KeyError: 'result'` | MCP response format changed | Check if CSV is nested in dict or direct string |
-| `ValueError: No candle data` | Insufficient candles returned | Verify MetaTrader connection and symbol availability |
-| Empty snapshots dict | CSV parsing failed | Check CSV format from MCP, ensure headers present |
+**After (clean):**
+- Single execution attempt
+- Only final output shown
+- Errors caught early with clear codes
+- Scripts ~1KB + 4 CSV files
+
+---
+
+## Troubleshooting
+
+| Error Code | Meaning | Solution |
+|------------|---------|----------|
+| `ERR_TA_001` | Insufficient data | Check MetaTrader connection, verify symbol availability |
+| `ERR_TA_002` | Invalid CSV format | Verify MCP server is responding correctly |
+| `ERR_TA_003` | Missing columns | Update MetaTrader, check MCP server compatibility |
+| `ModuleNotFoundError` | Import failed | Ensure script is in correct directory with run_analysis.py |
+
+**Debugging:**
+- Last 3 analyses are kept in `scripts/temp/` directory
+- Can inspect CSV files: `m15_YYYYMMDD_HHMMSS.csv`
+- Can inspect scripts: `analysis_YYYYMMDD_HHMMSS.py`
 
 ---
 

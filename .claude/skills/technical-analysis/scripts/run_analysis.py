@@ -409,6 +409,47 @@ def run_technical_analysis(symbol: str, mcp_data: Dict) -> Dict:
     }
 
 
+def cleanup_old_analyses(temp_dir: Path, keep: int = 3) -> None:
+    """
+    Clean up old temporary analysis files, keeping only the most recent analyses.
+
+    Args:
+        temp_dir: Path to temp directory containing analysis files
+        keep: Number of recent analyses to keep (default: 3)
+    """
+    import re
+    from collections import defaultdict
+
+    if not temp_dir.exists():
+        return
+
+    # Pattern to extract timestamp from filenames: YYYYMMDD_HHMMSS
+    timestamp_pattern = re.compile(r'(\d{8}_\d{6})')
+
+    # Group files by timestamp
+    analyses_by_timestamp = defaultdict(list)
+
+    for file_path in temp_dir.iterdir():
+        if file_path.name == '.gitignore':
+            continue
+
+        match = timestamp_pattern.search(file_path.name)
+        if match:
+            timestamp = match.group(1)
+            analyses_by_timestamp[timestamp].append(file_path)
+
+    # Sort timestamps (newest first)
+    sorted_timestamps = sorted(analyses_by_timestamp.keys(), reverse=True)
+
+    # Keep only the most recent 'keep' analyses, delete the rest
+    for timestamp in sorted_timestamps[keep:]:
+        for file_path in analyses_by_timestamp[timestamp]:
+            try:
+                file_path.unlink()
+            except Exception:
+                pass  # Silently ignore errors during cleanup
+
+
 if __name__ == "__main__":
     print("run_analysis.py: Use this module via import, not direct execution")
     print("Example:")
