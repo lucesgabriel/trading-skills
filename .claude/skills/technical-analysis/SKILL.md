@@ -363,20 +363,31 @@ When user requests technical analysis (e.g., "analyze EURUSD", "technical analys
 
 ### 🔇 Silent Execution Mode
 
-**IMPORTANT**: Provide clean user experience by minimizing intermediate output:
+**CRITICAL**: User must see ONLY the final analysis output. No intermediate steps.
 
-❌ **DO NOT show to user:**
-- "Creating temp_analysis_xxx.py..."
-- "Writing CSV files..."
-- "Executing analysis..."
-- File write operations
-- Intermediate steps
+❌ **NEVER show to user:**
+- Write tool operations
+- "Creating files..."
+- "Writing CSV..."
+- "Executing script..."
+- Intermediate Python code
+- File paths or timestamps
 
 ✅ **ONLY show to user:**
-- Final analysis output
-- Structured error messages (ERR_TA_xxx) if validation fails
+- Final formatted analysis (from run_analysis.py)
+- Error codes (ERR_TA_xxx) if validation fails
 
-**Implementation**: Use single Bash command to write files and execute script. Use generic description like "Running technical analysis" or empty string.
+**HOW TO ACHIEVE SILENT EXECUTION:**
+
+Use **single Bash command** that performs all operations internally:
+1. Validates data (silent - only shows errors)
+2. Writes CSV files (silent)
+3. Writes Python script (silent)
+4. Executes analysis (prints only final output)
+
+**Bash tool configuration:**
+- `description`: "" (empty string for complete silence)
+- `command`: See Step 2 template below
 
 ---
 
@@ -392,25 +403,50 @@ h4_data = mcp__metatrader__get_candles_latest(symbol_name: "EURUSD", timeframe: 
 d1_data = mcp__metatrader__get_candles_latest(symbol_name: "EURUSD", timeframe: "D1", count: 250)
 ```
 
-**Important:** Request 250 candles to ensure enough data for 200-period moving averages and other indicators.
+**Important:** Request 250 candles to ensure enough data for 200-period moving averages.
 
-### Step 1.5: Validate Data (Fail-Fast)
-
-Before creating any files, validate the data to ensure clean execution:
-
+**Extract CSV strings:**
 ```python
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(".claude/skills/technical-analysis/scripts")))
-from validation import validate_all_timeframes, ValidationError
-
-# Extract CSV strings from MCP responses
 csv_m15 = m15_data["result"] if isinstance(m15_data, dict) else m15_data
 csv_h1 = h1_data["result"] if isinstance(h1_data, dict) else h1_data
 csv_h4 = h4_data["result"] if isinstance(h4_data, dict) else h4_data
 csv_d1 = d1_data["result"] if isinstance(d1_data, dict) else d1_data
+```
 
-# Validate before creating files
+### Step 2: Execute Silent Analysis (Single Command)
+
+**CRITICAL:** Use this exact approach - do NOT use Write tool or show intermediate steps.
+
+**Detect Python command:**
+```python
+import shutil
+python_cmd = "python3" if shutil.which("python3") else "python"
+```
+
+**Execute analysis in single Bash command:**
+
+```bash
+{python_cmd} << 'ANALYSIS_SCRIPT'
+import sys
+from pathlib import Path
+from datetime import datetime
+
+# Setup paths
+scripts_dir = Path(r"D:\Programing Language html css js php DB\28102025\.claude\skills\technical-analysis\scripts")
+sys.path.insert(0, str(scripts_dir))
+
+# Import modules
+from validation import validate_all_timeframes, ValidationError
+from run_analysis import run_technical_analysis, cleanup_old_analyses
+
+# MCP data (insert actual values)
+price_data = {PRICE_DATA}
+csv_m15 = r"""{CSV_M15}"""
+csv_h1 = r"""{CSV_H1}"""
+csv_h4 = r"""{CSV_H4}"""
+csv_d1 = r"""{CSV_D1}"""
+
+# Step 1: Pre-flight validation (silent - only shows errors)
 try:
     validate_all_timeframes({
         "candles_m15": csv_m15,
@@ -419,100 +455,91 @@ try:
         "candles_d1": csv_d1
     })
 except ValidationError as e:
-    # Show structured error and abort
     print(f"[!] {e}")
     print(f"\nSolution:")
     if e.code == "ERR_TA_001":
         print("  - Check MetaTrader connection")
-        print("  - Verify symbol is valid and has historical data")
-        print("  - Try requesting fewer candles (count=100)")
+        print("  - Verify symbol has historical data")
+        print("  - Try count=100 instead of 250")
     elif e.code == "ERR_TA_002":
-        print("  - Verify MCP server is responding correctly")
-        print("  - Check network connectivity")
+        print("  - Verify MCP server is responding")
     elif e.code == "ERR_TA_003":
         print("  - Update MetaTrader to latest version")
-        print("  - Verify MCP server compatibility")
-    return  # Abort execution
-```
+    sys.exit(1)
 
-**Error Codes:**
-- `ERR_TA_001`: Insufficient or missing data
-- `ERR_TA_002`: Invalid CSV format
-- `ERR_TA_003`: Missing required columns
-
-### Step 2: Write CSV Data to External Files
-
-Create temp directory and write CSV files (cleaner than embedding in Python):
-
-```python
-from datetime import datetime
-from pathlib import Path
-
-# Setup temp directory
+# Step 2: Setup temp directory and cleanup old files (silent)
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-temp_dir = Path(".claude/skills/technical-analysis/scripts/temp")
+temp_dir = scripts_dir / "temp"
 temp_dir.mkdir(exist_ok=True)
-
-# Write each timeframe to separate file
-csv_files = {}
-for tf, csv_data in [("m15", csv_m15), ("h1", csv_h1), ("h4", csv_h4), ("d1", csv_d1)]:
-    csv_file = temp_dir / f"{tf}_{timestamp}.csv"
-    csv_file.write_text(csv_data)
-    csv_files[tf] = csv_file.name
-
-# Cleanup old analyses (keep last 3 for debugging)
-from run_analysis import cleanup_old_analyses
 cleanup_old_analyses(temp_dir, keep=3)
-```
 
-**Benefits:**
-- Temp script stays small (~1KB vs 7-21KB)
-- No string escaping issues
-- Easy to debug (can inspect CSV files)
-- Clear separation of data vs code
+# Step 3: Write CSV files (silent)
+(temp_dir / f"m15_{timestamp}.csv").write_text(csv_m15)
+(temp_dir / f"h1_{timestamp}.csv").write_text(csv_h1)
+(temp_dir / f"h4_{timestamp}.csv").write_text(csv_h4)
+(temp_dir / f"d1_{timestamp}.csv").write_text(csv_d1)
 
-### Step 3: Create Minimal Temporary Python Script
-
-Create `.claude/skills/technical-analysis/scripts/temp/analysis_{timestamp}.py`:
-
-```python
-#!/usr/bin/env python3
+# Step 4: Write analysis script (silent)
+analysis_script = f'''#!/usr/bin/env python3
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from run_analysis import run_technical_analysis
 
-# Price data from MCP
 price_data = {price_data}
-
-# Load CSV data from external files
 temp_dir = Path(__file__).parent
+
 mcp_data = {{
     "price": price_data,
-    "candles_m15": (temp_dir / "{csv_files['m15']}").read_text(),
-    "candles_h1": (temp_dir / "{csv_files['h1']}").read_text(),
-    "candles_h4": (temp_dir / "{csv_files['h4']}").read_text(),
-    "candles_d1": (temp_dir / "{csv_files['d1']}").read_text()
+    "candles_m15": (temp_dir / "m15_{timestamp}.csv").read_text(),
+    "candles_h1": (temp_dir / "h1_{timestamp}.csv").read_text(),
+    "candles_h4": (temp_dir / "h4_{timestamp}.csv").read_text(),
+    "candles_d1": (temp_dir / "d1_{timestamp}.csv").read_text()
 }}
 
-# Run analysis
-result = run_technical_analysis("{symbol}", mcp_data)
-
-# Print formatted output
+result = run_technical_analysis("{SYMBOL}", mcp_data)
 print(result["formatted_output"])
+'''
+
+script_path = temp_dir / f"analysis_{timestamp}.py"
+script_path.write_text(analysis_script)
+
+# Step 5: Execute analysis (prints only final output)
+exec(compile(script_path.read_text(), str(script_path), 'exec'))
+ANALYSIS_SCRIPT
 ```
 
-**Script size:** ~30 lines (~1KB) vs old approach 300+ lines (7-21KB)
+**Template variables to replace:**
+- `{python_cmd}`: "python3" or "python"
+- `{PRICE_DATA}`: price_data dictionary
+- `{CSV_M15}`: csv_m15 string
+- `{CSV_H1}`: csv_h1 string
+- `{CSV_H4}`: csv_h4 string
+- `{CSV_D1}`: csv_d1 string
+- `{SYMBOL}`: "EURUSD" or requested symbol
 
-### Step 4: Execute Script Silently
+**Bash tool parameters:**
+- `command`: Above template with variables replaced
+- `description`: "" (empty string - NO description shown to user)
+- `timeout`: 30000 (30 seconds)
 
-Execute in single Bash command (don't show intermediate steps):
-
-```bash
-python ".claude/skills/technical-analysis/scripts/temp/analysis_{timestamp}.py"
+**User experience:**
 ```
+[User sees ONLY this - no intermediate steps]
 
-**User sees:** Only the final formatted analysis output
+======================================================================
+TECHNICAL ANALYSIS: EURUSD
+======================================================================
+
+CURRENT SITUATION
+Price: 1.15802
+ATR: 0.00141 (14 pips)
+Volatility: compressed
+
+[... complete analysis output ...]
+
+======================================================================
+```
 
 **Expected Output:**
 ```
@@ -548,22 +575,33 @@ Risk:Reward: 1:3.4
 User: "analyze EURUSD"
 
 Step 1: Fetch MCP data (5 parallel calls) → price + 4 timeframes
-Step 1.5: Validate data (fail-fast if issues)
-Step 2: Write 4 CSV files to temp/
-Step 3: Create minimal Python script (~1KB)
-Step 4: Execute script silently
+Step 2: Execute silent analysis (single Bash command)
+  ├─ Validate data (fail-fast if issues)
+  ├─ Write 4 CSV files + analysis script
+  ├─ Execute analysis
+  └─ Print formatted output
 
-User sees: → [Clean analysis output]
+User sees: → [Only final analysis output]
 ```
 
-**Before (verbose):**
-- Multiple failed attempts
-- 7+ intermediate messages
-- Error messages shown
-- Scripts 7-21KB
+**Implementation:**
+- 1 MCP call batch (Step 1)
+- 1 Bash command with heredoc (Step 2)
+- 0 Write tool operations visible
+- 0 intermediate messages shown
 
-**After (clean):**
-- Single execution attempt
+**Before Phase 2.7 (verbose):**
+- Write tool showing 251-line CSV diffs
+- Multiple failed Bash attempts
+- Read/Update operations visible
+- 7+ intermediate messages
+- Manual text fallback
+
+**After Phase 2.7 (clean):**
+- Single Bash heredoc execution
+- All file operations internal (silent)
+- Validation integrated (only shows errors)
+- User sees only final formatted analysis
 - Only final output shown
 - Errors caught early with clear codes
 - Scripts ~1KB + 4 CSV files

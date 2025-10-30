@@ -25,7 +25,15 @@
       "Bash(start \"\" \"D:\\Programing Language html css js php DB\\28102025\\reports\\EURUSD_pattern_scan_20251029_151618.html\")",
       "Bash(start \"\" \"D:\\Programing Language html css js php DB\\28102025\\reports\\EURUSD_pattern_scan_20251029_152821.html\")",
       "Bash(del:*)",
-      "Bash(start \"\" \"D:\\Programing Language html css js php DB\\28102025\\reports\\EURUSD_pattern_scan_20251029_164300.html\")"
+      "Bash(start \"\" \"D:\\Programing Language html css js php DB\\28102025\\reports\\EURUSD_pattern_scan_20251029_164300.html\")",
+      "Bash(start \"\" \"D:\\Programing Language html css js php DB\\28102025\\reports\\GBPUSD_pattern_scan_20251029_203358.html\")",
+      "Bash(start \"\" \"D:\\Programing Language html css js php DB\\28102025\\reports\\EURUSD_pattern_scan_20251029_221303.html\")",
+      "Bash(start \"\" \"D:\\Programing Language html css js php DB\\28102025\\reports\\EURUSD_pattern_scan_20251029_225036.html\")",
+      "Skill(opportunity-scanner)",
+      "mcp__metatrader__get_symbols",
+      "Bash(start \"\" \"D:\\Programing Language html css js php DB\\28102025\\reports\\EURUSD_pattern_scan_20251030_081945.html\")",
+      "Skill(technical-analysis)",
+      "SlashCommand(/analyze EURUSD)"
     ],
     "deny": [],
     "ask": []
