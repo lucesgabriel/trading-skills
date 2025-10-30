@@ -142,17 +142,18 @@ Both commands accept `--sample-data` or `--sample-dir` for offline fixtures.
 When user requests a pattern scan, follow this workflow:
 
 1. **Fetch Market Data** - Make 5 parallel MCP calls (price + 4 timeframes)
-2. **Run Scanner** - Call `run_pattern_scan()` function with MCP data
-3. **Report Results** - Display summary and HTML report path
+2. **Create Temp Script** - Write temporary Python file with embedded MCP data using `repr()`
+3. **Execute & Cleanup** - Run script with `python temp_scan_{timestamp}.py` and delete after
+4. **Report Results** - Display summary and HTML report path
 
 For detailed step-by-step instructions, see [Execution Guide](resources/execution-guide.md).
 
 **Quick Reference:**
-- Import from: `.claude/skills/pattern-scanner/scripts/run_scan.py`
-- Function: `run_pattern_scan(symbol, mcp_data)`
-- MCP data format: `{"price": {...}, "candles_m15": "CSV", "candles_h1": "CSV", ...}`
-- Returns: Path to HTML report
-- Alternative: Temp script method if direct import fails
+- **Method:** Create temp file `.claude/skills/pattern-scanner/scripts/temp_scan_{timestamp}.py`
+- **Content:** Use `repr(mcp_data)` to embed data, import `run_pattern_scan` function
+- **Execute:** `python temp_scan_{timestamp}.py`
+- **Cleanup:** Delete temp file after execution
+- **Why temp files:** Handles large datasets (100 candles × 4 timeframes) reliably, avoids bash quote escaping issues
 
 ## Version History
 

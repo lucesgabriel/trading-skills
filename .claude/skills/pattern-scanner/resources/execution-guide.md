@@ -13,16 +13,20 @@ mcp__metatrader__get_candles_latest(symbol_name: "EURUSD", timeframe: "H4", coun
 mcp__metatrader__get_candles_latest(symbol_name: "EURUSD", timeframe: "D1", count: 100)
 ```
 
-## Step 2: Run Scanner with Python Import
+## Step 2: Create Temporary Python Script
 
-Use Python directly to call the `run_pattern_scan()` function:
+Create a temporary Python file with embedded MCP data. This is the most reliable method for large datasets.
+
+**Use Write tool to create a temp file:**
 
 ```python
-import sys
-sys.path.insert(0, ".claude/skills/pattern-scanner/scripts")
-from run_scan import run_pattern_scan
+from datetime import datetime
 
-# Prepare MCP data in the correct format
+# Generate unique timestamp
+timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+temp_file = f".claude/skills/pattern-scanner/scripts/temp_scan_{timestamp}.py"
+
+# Prepare MCP data
 mcp_data = {
     "price": {
         "bid": 1.16412,  # From get_symbol_price
@@ -31,43 +35,95 @@ mcp_data = {
         "volume": 0,
         "time": "2025-10-29T21:19:52Z"
     },
-    "candles_m15": """time,open,high,low,close,tick_volume,spread,real_volume
-0,2025-10-29 15:00:00+00:00,1.16354,1.16441,1.1635,1.16412,1204,0,0
-...""",  # Full CSV string from get_candles_latest
-    "candles_h1": """time,open,high,low,close,tick_volume,spread,real_volume
-0,2025-10-29 15:00:00+00:00,1.16468,1.16511,1.16343,1.16412,5930,0,0
-...""",  # Full CSV string from get_candles_latest
-    "candles_h4": """time,open,high,low,close,tick_volume,spread,real_volume
-0,2025-10-29 12:00:00+00:00,1.16573,1.16591,1.16343,1.16411,12297,0,0
-...""",  # Full CSV string from get_candles_latest
-    "candles_d1": """time,open,high,low,close,tick_volume,spread,real_volume
-0,2025-10-29 00:00:00+00:00,1.16501,1.16659,1.16187,1.16409,136741,0,0
-..."""   # Full CSV string from get_candles_latest
+    "candles_m15": "FULL CSV STRING",  # From get_candles_latest M15
+    "candles_h1": "FULL CSV STRING",   # From get_candles_latest H1
+    "candles_h4": "FULL CSV STRING",   # From get_candles_latest H4
+    "candles_d1": "FULL CSV STRING"    # From get_candles_latest D1
 }
 
-# Run the scanner
+# Create temp script content
+script_content = f'''#!/usr/bin/env python3
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent))
+from run_scan import run_pattern_scan
+
+# MCP data embedded
+mcp_data = {repr(mcp_data)}
+
+# Run scanner
 report_path = run_pattern_scan("EURUSD", mcp_data)
-print(f"✅ Report: {report_path}")
+print(f"\\n✅ Report: {{report_path}}")
+'''
+
+# Write temp file using Write tool
+# Write(temp_file, script_content)
 ```
 
 **Important Notes:**
-- ✅ **CSV Format:** MCP returns CSV as a string - use it directly (don't parse or modify)
-- ✅ **Price Data:** Use the full price dict from `get_symbol_price`
-- ✅ **Triple Quotes:** Use `"""..."""` for multiline CSV strings
-- ✅ **Include Header:** Do NOT remove the CSV header row (`time,open,high,low,...`)
-- ✅ **Symbol Case:** Symbol can be any case (EURUSD, eurusd) - it will be normalized
+- ✅ **Timestamp:** Use unique timestamp to prevent file collisions
+- ✅ **repr():** Use `repr(mcp_data)` to properly escape all strings
+- ✅ **CSV Format:** MCP returns CSV in two formats - both are supported:
+  ```python
+  # Format 1: Direct string
+  "candles_m15": ",time,open,high,low,close...\n99,2025-10-30..."
 
-**Data Format Flexibility:**
-The scanner accepts two CSV formats:
-```python
-# Format 1: Direct CSV string (preferred)
-"candles_m15": "time,open,high,low,close,tick_volume,spread,real_volume\n0,2025..."
+  # Format 2: Dict with 'result' key
+  "candles_m15": {"result": ",time,open,high,low,close...\n99,2025-10-30..."}
+  ```
+- ✅ **Extract CSV:** If MCP returns dict format, extract the string:
+  ```python
+  csv_m15 = mcp_m15["result"] if isinstance(mcp_m15, dict) else mcp_m15
+  ```
 
-# Format 2: Dict with 'result' key (also supported)
-"candles_m15": {"result": "time,open,high,low,close,tick_volume,spread,real_volume\n0,2025..."}
+## Step 3: Execute Script and Cleanup
+
+After creating the temp file, execute it and clean up:
+
+```bash
+# Execute the scanner (Windows)
+python .claude/skills/pattern-scanner/scripts/temp_scan_20251030_123456.py
+
+# Cleanup temp file (Windows)
+del .claude\skills\pattern-scanner\scripts\temp_scan_20251030_123456.py
 ```
 
-## Step 3: Display Results to User
+**Or in one line (Windows):**
+```bash
+python .claude/skills/pattern-scanner/scripts/temp_scan_20251030_123456.py && del .claude\skills\pattern-scanner\scripts\temp_scan_20251030_123456.py
+```
+
+**Linux/Mac:**
+```bash
+python .claude/skills/pattern-scanner/scripts/temp_scan_20251030_123456.py && rm .claude/skills/pattern-scanner/scripts/temp_scan_20251030_123456.py
+```
+
+**Programmatic cleanup (recommended):**
+```python
+import subprocess
+import os
+
+# Execute
+result = subprocess.run(
+    ["python", temp_file],
+    capture_output=True,
+    text=True,
+    cwd="D:/Programing Language html css js php DB/28102025"
+)
+
+# Display output
+print(result.stdout)
+if result.stderr:
+    print("Errors:", result.stderr)
+
+# Cleanup
+try:
+    os.remove(temp_file)
+except Exception as e:
+    print(f"Warning: Could not delete temp file: {e}")
+```
+
+## Step 4: Display Results to User
 
 The scanner outputs to console:
 ```
@@ -102,39 +158,34 @@ The scanner outputs to console:
 - ⚠️ Warning signals and invalidation conditions
 - 📋 Executive summary with step-by-step guidance
 
-## Alternative Method: Temp Script (If Python Import Fails)
+## Alternative Method: Direct Python Import (Advanced)
 
-If the direct import method doesn't work in your environment, use temp scripts:
+For small datasets or scripting environments, you can use direct import:
 
 ```python
-from datetime import datetime
-
-timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-temp_script = f".claude/skills/pattern-scanner/scripts/temp_scan_{timestamp}.py"
-
-# Write temp script
-with open(temp_script, 'w', encoding='utf-8') as f:
-    f.write('''#!/usr/bin/env python3
 import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, ".claude/skills/pattern-scanner/scripts")
 from run_scan import run_pattern_scan
 
-mcp_data = ''' + repr(mcp_data) + '''
+# Prepare MCP data (must be small enough for inline code)
+mcp_data = {
+    "price": {...},
+    "candles_m15": "CSV string",
+    "candles_h1": "CSV string",
+    "candles_h4": "CSV string",
+    "candles_d1": "CSV string"
+}
 
 report_path = run_pattern_scan("EURUSD", mcp_data)
 print(f"✅ Report: {report_path}")
-''')
-
-# Execute
-import subprocess
-result = subprocess.run(['python', temp_script], capture_output=True, text=True)
-print(result.stdout)
-
-# Cleanup
-import os
-os.remove(temp_script)
 ```
+
+**Limitations:**
+- ❌ Doesn't work well with large datasets (100+ candles × 4 timeframes)
+- ❌ Can cause issues when executed via `bash -c python -c "..."`
+- ❌ Quote escaping problems in shell environments
+
+**Use temp file method instead for production use.**
 
 ## Error Handling
 
