@@ -1,6 +1,21 @@
 ---
 name: backtesting
 description: Use when validating trading strategies with historical data, optimizing parameters, or assessing strategy viability before live trading.
+version: 1.0.0
+tags: [trading, backtesting, strategy-validation, historical-data, win-rate, profit-factor, optimization, testing]
+category: strategy-validation
+requires:
+  mcp:
+    - mcp__metatrader__get_candles_latest
+    - mcp__metatrader__get_deals
+    - mcp__metatrader__get_orders
+  skills:
+    - technical-analysis
+difficulty: advanced
+estimated_time: 60-180s
+output_format: [console]
+author: Gabriel Luces
+repository: https://github.com/lucesgabriel/trading-skills
 ---
 
 # Backtesting & Strategy Validation Skill

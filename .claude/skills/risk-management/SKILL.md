@@ -1,6 +1,19 @@
 ---
 name: risk-management
 description: Use when calculating position sizes, determining stop loss levels, or assessing portfolio risk before placing trades.
+version: 1.0.0
+tags: [trading, risk-management, position-sizing, money-management, stop-loss, take-profit, lot-size, capital-preservation]
+category: risk-management
+requires:
+  mcp:
+    - mcp__metatrader__get_account_info
+    - mcp__metatrader__get_symbol_price
+  skills: []
+difficulty: beginner
+estimated_time: 10-20s
+output_format: [console]
+author: Gabriel Luces
+repository: https://github.com/lucesgabriel/trading-skills
 ---
 
 # Risk Management & Position Sizing Skill

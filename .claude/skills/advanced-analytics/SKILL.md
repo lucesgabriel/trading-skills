@@ -1,6 +1,20 @@
 ---
 name: advanced-analytics
 description: Use when analyzing performance metrics, detecting price patterns, or assessing correlations between trading instruments.
+version: 1.0.0
+tags: [trading, analytics, statistics, sharpe-ratio, sortino, correlation, monte-carlo, performance, portfolio]
+category: analytics
+requires:
+  mcp:
+    - mcp__metatrader__get_deals
+    - mcp__metatrader__get_orders
+    - mcp__metatrader__get_candles_latest
+  skills: []
+difficulty: advanced
+estimated_time: 30-90s
+output_format: [console]
+author: Gabriel Luces
+repository: https://github.com/lucesgabriel/trading-skills
 ---
 
 # Advanced Analytics Skill

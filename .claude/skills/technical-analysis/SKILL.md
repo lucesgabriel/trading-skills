@@ -1,6 +1,19 @@
 ---
 name: technical-analysis
 description: Use when analyzing market trends, evaluating technical indicators, or calculating success probabilities for forex trading signals.
+version: 1.0.0
+tags: [trading, indicators, technical-analysis, forex, RSI, MACD, moving-average, bollinger-bands, trend, momentum]
+category: market-analysis
+requires:
+  mcp:
+    - mcp__metatrader__get_symbol_price
+    - mcp__metatrader__get_candles_latest
+  skills: []
+difficulty: intermediate
+estimated_time: 20-40s
+output_format: [console]
+author: Gabriel Luces
+repository: https://github.com/lucesgabriel/trading-skills
 ---
 
 # Technical Analysis Skill

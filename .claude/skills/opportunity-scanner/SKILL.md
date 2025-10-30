@@ -1,6 +1,22 @@
 ---
 name: opportunity-scanner
 description: Use when finding the best trading opportunities, scanning multiple symbols, or comparing setups across currency pairs and commodities.
+version: 1.0.0
+tags: [trading, scanner, opportunities, multi-symbol, forex, market-scan, setups, ranking]
+category: market-analysis
+requires:
+  mcp:
+    - mcp__metatrader__get_symbols
+    - mcp__metatrader__get_symbol_price
+    - mcp__metatrader__get_candles_latest
+  skills:
+    - technical-analysis
+    - pattern-scanner
+difficulty: intermediate
+estimated_time: 60-120s
+output_format: [console]
+author: Gabriel Luces
+repository: https://github.com/lucesgabriel/trading-skills
 ---
 
 # Trading Opportunity Scanner Skill

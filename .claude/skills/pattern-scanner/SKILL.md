@@ -1,6 +1,20 @@
 ---
 name: pattern-scanner
 description: Use when detecting candlestick patterns, scanning forex symbols for trading signals, or analyzing chart formations across multiple timeframes.
+version: 2.2.1
+tags: [trading, patterns, candlestick, forex, technical-analysis, reversal, engulfing, doji, hammer]
+category: market-analysis
+requires:
+  mcp:
+    - mcp__metatrader__get_symbol_price
+    - mcp__metatrader__get_candles_latest
+  skills:
+    - technical-analysis
+difficulty: intermediate
+estimated_time: 30-60s
+output_format: [console, html]
+author: Gabriel Luces
+repository: https://github.com/lucesgabriel/trading-skills
 ---
 
 # Pattern Scanner
