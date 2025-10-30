@@ -169,12 +169,16 @@ def format_trading_setup(
         "signal": "WAIT"
     }
 
-    if bias == "BULLISH" and support_levels:
+    if bias == "BULLISH":
         # Long setup
         entry = current_price
-        stop_loss = support_levels[0] if support_levels else current_price - (atr * 2)
+        # Find support below current price, or use ATR-based stop
+        support_below = [s for s in support_levels if s < current_price]
+        stop_loss = support_below[0] if support_below else current_price - (atr * 2)
+        # Find resistance above current price, or use ATR-based target
+        resistance_above = [r for r in resistance_levels if r > current_price]
         take_profit_1 = current_price + (atr * 2)
-        take_profit_2 = resistance_levels[0] if resistance_levels else current_price + (atr * 3)
+        take_profit_2 = resistance_above[0] if resistance_above else current_price + (atr * 3)
 
         setup.update({
             "signal": "LONG",
@@ -188,12 +192,16 @@ def format_trading_setup(
             "risk_reward": round((take_profit_2 - entry) / (entry - stop_loss), 2) if entry != stop_loss else 0
         })
 
-    elif bias == "BEARISH" and resistance_levels:
+    elif bias == "BEARISH":
         # Short setup
         entry = current_price
-        stop_loss = resistance_levels[0] if resistance_levels else current_price + (atr * 2)
+        # Find resistance above current price, or use ATR-based stop
+        resistance_above = [r for r in resistance_levels if r > current_price]
+        stop_loss = resistance_above[0] if resistance_above else current_price + (atr * 2)
+        # Find support below current price, or use ATR-based target
+        support_below = [s for s in support_levels if s < current_price]
         take_profit_1 = current_price - (atr * 2)
-        take_profit_2 = support_levels[0] if support_levels else current_price - (atr * 3)
+        take_profit_2 = support_below[0] if support_below else current_price - (atr * 3)
 
         setup.update({
             "signal": "SHORT",
@@ -234,40 +242,47 @@ def format_analysis_output(
 
     # Header
     output.append("=" * 70)
-    output.append(f"📊 TECHNICAL ANALYSIS: {symbol}")
+    output.append(f"TECHNICAL ANALYSIS: {symbol}")
     output.append("=" * 70)
 
     # Current situation
     if "H1" in snapshots:
         h1 = snapshots["H1"]
-        output.append(f"\n💹 CURRENT SITUATION")
+        output.append(f"\nCURRENT SITUATION")
         output.append(f"Price: {h1['price']:.5f}")
         output.append(f"ATR: {h1['atr']:.5f} ({int(h1['atr'] * 10000)} pips)")
         output.append(f"Volatility: {h1['volatility_regime']}")
 
     # Multi-timeframe analysis
-    output.append(f"\n📈 MULTI-TIMEFRAME ANALYSIS")
+    output.append(f"\nMULTI-TIMEFRAME ANALYSIS")
 
     for tf in ["D1", "H4", "H1", "M15"]:
         if tf in snapshots:
             snap = snapshots[tf]
-            trend_icon = "↑" if snap.get("trend_bias", 0) > 0 else "↓" if snap.get("trend_bias", 0) < 0 else "→"
+            # Handle trend_bias as string ("bullish", "bearish", "neutral")
+            trend_bias = snap.get("trend_bias", "neutral").lower()
+            if trend_bias == "bullish":
+                trend_icon = "^"
+            elif trend_bias == "bearish":
+                trend_icon = "v"
+            else:
+                trend_icon = "-"
             output.append(f"\n{tf}:")
-            output.append(f"  Trend: {trend_icon} {snap.get('trend_bias', 'NEUTRAL')}")
+            output.append(f"  Trend: {trend_icon} {trend_bias.upper()}")
             output.append(f"  RSI: {snap['rsi']:.1f}")
             output.append(f"  MACD: {snap['macd']['histogram']:.5f}")
             output.append(f"  Long probability: {snap['long_probability']:.1f}%")
             output.append(f"  Short probability: {snap['short_probability']:.1f}%")
 
     # Confluence
-    output.append(f"\n🎯 CONFLUENCE ANALYSIS")
+    output.append(f"\nCONFLUENCE ANALYSIS")
     output.append(f"Overall Bias: {confluence['bias']}")
     output.append(f"Confidence: {confluence['confidence']:.1f}%")
     output.append(f"Long Probability: {confluence['long_probability']:.1f}%")
     output.append(f"Short Probability: {confluence['short_probability']:.1f}%")
 
     # Support/Resistance
-    output.append(f"\n📍 KEY LEVELS")
+    output.append(f"\nKEY LEVELS")
     output.append(f"Resistance:")
     for i, level in enumerate(support_resistance["resistance"][:3], 1):
         output.append(f"  R{i}: {level:.5f}")
@@ -276,7 +291,7 @@ def format_analysis_output(
         output.append(f"  S{i}: {level:.5f}")
 
     # Trading setup
-    output.append(f"\n💡 TRADING RECOMMENDATION")
+    output.append(f"\nTRADING RECOMMENDATION")
     output.append(f"Signal: {trading_setup['signal']}")
 
     if trading_setup['signal'] in ["LONG", "SHORT"]:
@@ -287,26 +302,26 @@ def format_analysis_output(
         output.append(f"  Take Profit 2: {trading_setup['take_profit_2']:.5f} ({trading_setup['reward_pips_2']} pips)")
         output.append(f"  Risk:Reward: 1:{trading_setup['risk_reward']}")
 
-        output.append(f"\n📋 EXECUTION:")
+        output.append(f"\nEXECUTION:")
         if trading_setup['signal'] == "LONG":
-            output.append(f"  • Wait for confirmation or enter at current price")
-            output.append(f"  • Place stop loss below support at {trading_setup['stop_loss']:.5f}")
-            output.append(f"  • Target TP1 for 50% position, let TP2 run")
+            output.append(f"  * Wait for confirmation or enter at current price")
+            output.append(f"  * Place stop loss below support at {trading_setup['stop_loss']:.5f}")
+            output.append(f"  * Target TP1 for 50% position, let TP2 run")
         else:
-            output.append(f"  • Wait for confirmation or enter at current price")
-            output.append(f"  • Place stop loss above resistance at {trading_setup['stop_loss']:.5f}")
-            output.append(f"  • Target TP1 for 50% position, let TP2 run")
+            output.append(f"  * Wait for confirmation or enter at current price")
+            output.append(f"  * Place stop loss above resistance at {trading_setup['stop_loss']:.5f}")
+            output.append(f"  * Target TP1 for 50% position, let TP2 run")
     else:
-        output.append(f"\n⚠️  No clear setup at this moment")
-        output.append(f"  • Signals are mixed or weak")
-        output.append(f"  • Wait for better confluence")
-        output.append(f"  • Monitor key levels for breakouts")
+        output.append(f"\n[!] No clear setup at this moment")
+        output.append(f"  * Signals are mixed or weak")
+        output.append(f"  * Wait for better confluence")
+        output.append(f"  * Monitor key levels for breakouts")
 
     # Risk warning
-    output.append(f"\n⚠️  RISK MANAGEMENT:")
-    output.append(f"  • Never risk more than 1-2% of account per trade")
-    output.append(f"  • Always use stop loss")
-    output.append(f"  • Consider news events and market hours")
+    output.append(f"\n[!] RISK MANAGEMENT:")
+    output.append(f"  * Never risk more than 1-2% of account per trade")
+    output.append(f"  * Always use stop loss")
+    output.append(f"  * Consider news events and market hours")
 
     output.append("\n" + "=" * 70)
 
