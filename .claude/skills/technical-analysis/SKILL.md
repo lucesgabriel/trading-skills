@@ -1,6 +1,6 @@
 ---
 name: technical-analysis
-description: Comprehensive technical analysis for forex and financial markets using multiple indicators (MA, MACD, RSI, Bollinger Bands, Stochastic, ATR) to identify trading opportunities with calculated success probabilities. Use when user requests technical analysis, market trend analysis, indicator evaluation, or trading signals for any symbol like EURUSD, GBPUSD, etc.
+description: Use when analyzing market trends, evaluating technical indicators, or calculating success probabilities for forex trading signals.
 ---
 
 # Technical Analysis Skill
@@ -9,10 +9,27 @@ description: Comprehensive technical analysis for forex and financial markets us
 Comprehensive technical analysis for forex and financial markets using MetaTrader data and multiple indicators to identify trading opportunities with calculated success probabilities.
 
 ## When to Use This Skill
-- User requests technical analysis of any trading symbol
-- User asks for market conditions or trend analysis
-- User wants to evaluate multiple indicators simultaneously
-- User requests trading signals or setups
+
+**Primary Triggers:**
+- "analyze [SYMBOL]" or "technical analysis for [SYMBOL]"
+- "what are the indicators showing for [SYMBOL]?"
+- "is [SYMBOL] bullish or bearish?"
+- "give me a trading signal for [SYMBOL]"
+
+**Use Cases:**
+- User wants comprehensive multi-indicator analysis
+- User needs trend direction and market conditions
+- User asks for success probability calculations
+- User wants trading signals with entry/stop/target levels
+
+**Example Inputs:**
+```
+✓ "analyze EURUSD"
+✓ "what's the trend on GBPUSD?"
+✓ "give me indicators for XAUUSD"
+✓ "is USDJPY showing a buy signal?"
+✗ "scan for patterns" → Use pattern-scanner skill instead
+```
 
 ## Core Analysis Methodology
 

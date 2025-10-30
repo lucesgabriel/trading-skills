@@ -1,6 +1,6 @@
 ---
 name: risk-management
-description: Calculate optimal position sizes, manage risk exposure, and monitor portfolio health for sustainable trading. Use when user asks about position sizing, "how much should I risk", stop loss placement, portfolio risk assessment, or before placing any trade.
+description: Use when calculating position sizes, determining stop loss levels, or assessing portfolio risk before placing trades.
 ---
 
 # Risk Management & Position Sizing Skill
@@ -9,12 +9,27 @@ description: Calculate optimal position sizes, manage risk exposure, and monitor
 Calculate optimal position sizes, manage risk exposure, and monitor portfolio health to ensure sustainable trading with proper capital preservation.
 
 ## When to Use This Skill
-- Before placing any trade
-- User asks "how much should I risk?"
-- User wants to calculate position size
-- User needs stop loss recommendations
-- User requests portfolio risk assessment
-- Before scaling into positions
+
+**Primary Triggers:**
+- "how much should I risk on [SYMBOL]?"
+- "calculate position size for [SYMBOL]"
+- "what lot size should I use?"
+- "how to manage risk for this trade?"
+
+**Use Cases:**
+- User wants to calculate optimal position size before placing a trade
+- User needs stop loss and take profit recommendations
+- User asks for portfolio risk assessment
+- User wants to ensure proper risk management (1-2% rule)
+
+**Example Inputs:**
+```
+✓ "how much should I risk on EURUSD?"
+✓ "calculate position size for entry:1.0850, stop:1.0820"
+✓ "what lot size for 1% risk on GBPUSD?"
+✓ "assess my portfolio risk"
+✗ "what's the trend on EURUSD?" → Use technical-analysis skill instead
+```
 
 ## Core Risk Management Principles
 

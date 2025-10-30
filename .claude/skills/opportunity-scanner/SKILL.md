@@ -1,6 +1,6 @@
 ---
 name: opportunity-scanner
-description: Automatically scan multiple currency pairs, indices, and commodities to identify best trading opportunities with ranked probability scores. Use when user asks "what should I trade today", "scan the market", requests market watchlist, or wants to compare opportunities across symbols like EURUSD, GBPUSD, XAUUSD, etc.
+description: Use when finding the best trading opportunities, scanning multiple symbols, or comparing setups across currency pairs and commodities.
 ---
 
 # Trading Opportunity Scanner Skill
@@ -9,10 +9,27 @@ description: Automatically scan multiple currency pairs, indices, and commoditie
 Automatically scan multiple currency pairs and symbols to identify the best trading opportunities based on technical analysis, with ranked probability scores.
 
 ## When to Use This Skill
-- User wants to find trading opportunities across multiple symbols
-- User asks "what should I trade today?"
-- User requests a market scan or watchlist
-- User wants to compare opportunities across different pairs
+
+**Primary Triggers:**
+- "what should I trade today?"
+- "scan the market for opportunities"
+- "find the best trading setups"
+- "which pairs have good signals?"
+
+**Use Cases:**
+- User wants to discover trading opportunities across multiple symbols
+- User needs a ranked list of best setups
+- User wants to compare signals across different pairs
+- User asks for market watchlist or top opportunities
+
+**Example Inputs:**
+```
+✓ "what should I trade today?"
+✓ "scan the forex market for opportunities"
+✓ "find the best setups across all pairs"
+✓ "which symbols have the highest probability?"
+✗ "analyze EURUSD" → Use technical-analysis skill for single symbol
+```
 
 ## Scanner Workflow
 

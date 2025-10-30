@@ -1,6 +1,6 @@
 ---
 name: advanced-analytics
-description: Advanced trading analytics including statistical analysis, pattern recognition, and correlation studies. Use for deep performance analysis, pattern detection in price action, and portfolio correlation assessment.
+description: Use when analyzing performance metrics, detecting price patterns, or assessing correlations between trading instruments.
 ---
 
 # Advanced Analytics Skill
@@ -12,12 +12,27 @@ Provide sophisticated analytical capabilities beyond basic technical indicators.
 - **Correlation Analysis**: Identify correlated pairs, portfolio concentration risk, diversification opportunities
 
 ## When to Use This Skill
-- User requests advanced performance metrics or risk-adjusted returns
-- User wants to analyze candlestick patterns automatically
-- User asks about correlation between currency pairs
-- User needs portfolio diversification analysis
-- User wants Monte Carlo simulation for strategy validation
-- User requests risk of ruin calculation
+
+**Primary Triggers:**
+- "calculate Sharpe ratio" or "risk-adjusted returns"
+- "correlation between [PAIR1] and [PAIR2]"
+- "Monte Carlo simulation for [STRATEGY]"
+- "risk of ruin calculation"
+
+**Use Cases:**
+- User wants advanced performance metrics (Sharpe, Sortino, Calmar ratios)
+- User asks about correlation between currency pairs for diversification
+- User needs Monte Carlo simulation for strategy validation
+- User wants sophisticated statistical analysis beyond basic indicators
+
+**Example Inputs:**
+```
+✓ "calculate Sharpe ratio for my trades"
+✓ "what's the correlation between EURUSD and GBPUSD?"
+✓ "run Monte Carlo simulation for this strategy"
+✓ "calculate risk of ruin"
+✗ "scan EURUSD" → Use pattern-scanner skill instead
+```
 
 ## Available Scripts
 

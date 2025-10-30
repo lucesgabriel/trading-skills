@@ -1,6 +1,6 @@
 ---
 name: backtesting
-description: Validate trading strategies using historical data to calculate real success probabilities, optimize parameters, and assess strategy viability before risking capital. Use when user wants to test strategy, asks "does this strategy work", needs historical performance data, or before deploying new trading approach.
+description: Use when validating trading strategies with historical data, optimizing parameters, or assessing strategy viability before live trading.
 ---
 
 # Backtesting & Strategy Validation Skill
@@ -9,12 +9,27 @@ description: Validate trading strategies using historical data to calculate real
 Validate trading strategies using historical data to calculate real success probabilities, identify optimal parameters, and assess strategy viability before risking real capital.
 
 ## When to Use This Skill
-- User wants to test a trading strategy
-- User asks "does this strategy work?"
-- User needs to validate indicator settings
-- User wants historical performance data
-- Before deploying any new trading approach
-- To optimize entry/exit rules
+
+**Primary Triggers:**
+- "backtest [STRATEGY]" or "test this strategy"
+- "does this strategy work?"
+- "validate [STRATEGY] on historical data"
+- "what's the win rate of [STRATEGY]?"
+
+**Use Cases:**
+- User wants to test a trading strategy on historical data
+- User needs to validate indicator settings or parameters
+- User asks for historical performance metrics (win rate, profit factor, drawdown)
+- User wants to assess strategy viability before live trading
+
+**Example Inputs:**
+```
+✓ "backtest MA crossover strategy"
+✓ "does RSI reversal strategy work?"
+✓ "test Bullish Engulfing pattern on EURUSD"
+✓ "validate this strategy on 6 months of data"
+✗ "analyze EURUSD" → Use technical-analysis skill instead
+```
 
 ## Backtesting Fundamentals
 
