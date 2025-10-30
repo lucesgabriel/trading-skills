@@ -1,6 +1,6 @@
 # Execution Instructions
 
-When user requests a pattern scan (e.g., "scan EURUSD"), follow these 4 simple steps:
+When user requests a pattern scan (e.g., "scan EURUSD"), follow these 3 simple steps:
 
 ## Step 1: Fetch Market Data from MCP
 
@@ -13,118 +13,147 @@ mcp__metatrader__get_candles_latest(symbol_name: "EURUSD", timeframe: "H4", coun
 mcp__metatrader__get_candles_latest(symbol_name: "EURUSD", timeframe: "D1", count: 100)
 ```
 
-## Step 2: Create Temporary Python Script with Timestamp
+## Step 2: Run Scanner with Python Import
 
-Use Write tool to create `.claude/skills/pattern-scanner/scripts/temp_scan_{timestamp}.py`:
+Use Python directly to call the `run_pattern_scan()` function:
 
-**Generate timestamp first:**
 ```python
-from datetime import datetime
-timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+import sys
+sys.path.insert(0, ".claude/skills/pattern-scanner/scripts")
+from run_scan import run_pattern_scan
+
+# Prepare MCP data in the correct format
+mcp_data = {
+    "price": {
+        "bid": 1.16412,  # From get_symbol_price
+        "ask": 1.16412,
+        "last": 0.0,
+        "volume": 0,
+        "time": "2025-10-29T21:19:52Z"
+    },
+    "candles_m15": """time,open,high,low,close,tick_volume,spread,real_volume
+0,2025-10-29 15:00:00+00:00,1.16354,1.16441,1.1635,1.16412,1204,0,0
+...""",  # Full CSV string from get_candles_latest
+    "candles_h1": """time,open,high,low,close,tick_volume,spread,real_volume
+0,2025-10-29 15:00:00+00:00,1.16468,1.16511,1.16343,1.16412,5930,0,0
+...""",  # Full CSV string from get_candles_latest
+    "candles_h4": """time,open,high,low,close,tick_volume,spread,real_volume
+0,2025-10-29 12:00:00+00:00,1.16573,1.16591,1.16343,1.16411,12297,0,0
+...""",  # Full CSV string from get_candles_latest
+    "candles_d1": """time,open,high,low,close,tick_volume,spread,real_volume
+0,2025-10-29 00:00:00+00:00,1.16501,1.16659,1.16187,1.16409,136741,0,0
+..."""   # Full CSV string from get_candles_latest
+}
+
+# Run the scanner
+report_path = run_pattern_scan("EURUSD", mcp_data)
+print(f"✅ Report: {report_path}")
 ```
 
-**Then create the temp script:**
+**Important Notes:**
+- ✅ **CSV Format:** MCP returns CSV as a string - use it directly (don't parse or modify)
+- ✅ **Price Data:** Use the full price dict from `get_symbol_price`
+- ✅ **Triple Quotes:** Use `"""..."""` for multiline CSV strings
+- ✅ **Include Header:** Do NOT remove the CSV header row (`time,open,high,low,...`)
+- ✅ **Symbol Case:** Symbol can be any case (EURUSD, eurusd) - it will be normalized
+
+**Data Format Flexibility:**
+The scanner accepts two CSV formats:
 ```python
-#!/usr/bin/env python3
+# Format 1: Direct CSV string (preferred)
+"candles_m15": "time,open,high,low,close,tick_volume,spread,real_volume\n0,2025..."
+
+# Format 2: Dict with 'result' key (also supported)
+"candles_m15": {"result": "time,open,high,low,close,tick_volume,spread,real_volume\n0,2025..."}
+```
+
+## Step 3: Display Results to User
+
+The scanner outputs to console:
+```
+📊 Escaneando EURUSD para patrones de velas...
+============================================================
+💰 Precio actual: 1.16412
+✓ M15: 100 velas cargadas
+✓ H1: 100 velas cargadas
+✓ H4: 100 velas cargadas
+✓ D1: 100 velas cargadas
+
+🔍 Detectando patrones...
+🧮 Calculando confluencia...
+
+============================================================
+✅ Patrones detectados: 5
+💡 Señal: LONG - ALCISTA
+📈 Probabilidad: 68.5%
+============================================================
+
+📝 Generando reporte HTML...
+✅ Reporte generado: D:\...\reports\EURUSD_pattern_scan_20251029_221303.html
+```
+
+**HTML Report Features:**
+- 🎨 Vibrant purple/violet gradient design
+- 📊 Pattern cards with emojis and detailed explanations
+- 📈 Interactive candlestick charts (Chart.js)
+- 🔍 Technical indicators (RSI, MACD, Stochastic)
+- 💰 Complete trading setup (Entry/SL/TP1/TP2/TP3)
+- 🛡️ Risk management recommendations
+- ⚠️ Warning signals and invalidation conditions
+- 📋 Executive summary with step-by-step guidance
+
+## Alternative Method: Temp Script (If Python Import Fails)
+
+If the direct import method doesn't work in your environment, use temp scripts:
+
+```python
+from datetime import datetime
+
+timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+temp_script = f".claude/skills/pattern-scanner/scripts/temp_scan_{timestamp}.py"
+
+# Write temp script
+with open(temp_script, 'w', encoding='utf-8') as f:
+    f.write('''#!/usr/bin/env python3
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 from run_scan import run_pattern_scan
 
-# MCP data embedded directly (no JSON file needed)
-mcp_data = {
-    "price": {"bid": 1.16412, "ask": 1.16412, "last": 0.0, "volume": 0, "time": "2025-10-29T21:19:52Z"},
-    "candles_m15": """time,open,high,low,close,tick_volume,spread,real_volume
-99,2025-10-29 21:15:00+00:00,1.16354,1.16441,1.1635,1.16412,1204,0,0
-...INSERT FULL M15 CSV DATA HERE...""",
-    "candles_h1": """time,open,high,low,close,tick_volume,spread,real_volume
-99,2025-10-29 21:00:00+00:00,1.16468,1.16511,1.16343,1.16412,5930,0,0
-...INSERT FULL H1 CSV DATA HERE...""",
-    "candles_h4": """time,open,high,low,close,tick_volume,spread,real_volume
-99,2025-10-29 20:00:00+00:00,1.16573,1.16591,1.16343,1.16411,12297,0,0
-...INSERT FULL H4 CSV DATA HERE...""",
-    "candles_d1": """time,open,high,low,close,tick_volume,spread,real_volume
-99,2025-10-29 00:00:00+00:00,1.16501,1.16659,1.16187,1.16409,136741,0,0
-...INSERT FULL D1 CSV DATA HERE..."""
-}
+mcp_data = ''' + repr(mcp_data) + '''
 
 report_path = run_pattern_scan("EURUSD", mcp_data)
-print(f"\n✅ Scan complete! Report: {report_path}")
+print(f"✅ Report: {report_path}")
+''')
+
+# Execute
+import subprocess
+result = subprocess.run(['python', temp_script], capture_output=True, text=True)
+print(result.stdout)
+
+# Cleanup
+import os
+os.remove(temp_script)
 ```
 
-**Important Notes:**
-- Replace `{timestamp}` with actual timestamp value (e.g., `20251029_163045`)
-- Replace `"EURUSD"` with actual symbol
-- Replace price dict with actual MCP price data
-- Replace CSV placeholders with full CSV strings from MCP (including header)
-- Use triple quotes `"""..."""` for multiline CSV strings
-- Do NOT remove the header row from CSV data
+## Error Handling
 
-**Why Temp Files (Not Python One-Liner):**
-- ✅ **Works reliably** - No bash quote escaping nightmares
-- ✅ **Handles multiline data** - CSV data stays clean
-- ✅ **Debuggable** - Can inspect temp file if errors occur
-- ✅ **Maintainable** - Clear Python code, not bash magic
-- ✅ **No collisions** - Timestamp ensures unique filenames
-- 📚 **Pragmatic** - Temp files are fine when they work best
+Common errors and solutions:
 
-## Step 3: Execute Scanner with Guaranteed Cleanup
+| Error | Cause | Solution |
+|-------|-------|----------|
+| `insufficient_data` | Less than 50 candles | Increase count to 100+ in MCP calls |
+| `ImportError: run_pattern_scan` | Wrong import path | Use correct path: `.claude/skills/pattern-scanner/scripts` |
+| `KeyError: 'candles_m15'` | Missing timeframe data | Ensure all 4 timeframes are provided |
+| `UnicodeEncodeError` | Windows console encoding | Use `safe_print()` function (already handled) |
+| Empty HTML report | Invalid CSV format | Verify CSV has header row and valid data |
 
-Use a try-finally pattern to ensure cleanup happens:
+## Timeframe Requirements
 
-```python
-# Store the temp file path
-temp_file = f".claude/skills/pattern-scanner/scripts/temp_scan_{timestamp}.py"
+Minimum candles per timeframe:
+- **M15:** 50 candles (≈12.5 hours of data)
+- **H1:** 50 candles (≈2 days of data)
+- **H4:** 50 candles (≈8 days of data)
+- **D1:** 50 candles (≈2 months of data)
 
-try:
-    # Execute the scanner
-    import subprocess
-    result = subprocess.run(
-        ["python", temp_file],
-        capture_output=True,
-        text=True,
-        timeout=120
-    )
-
-    # Display output
-    print(result.stdout)
-
-    if result.returncode != 0:
-        print("Error:", result.stderr)
-
-finally:
-    # Guaranteed cleanup - delete temp file
-    import os
-    try:
-        os.remove(temp_file)
-    except Exception as e:
-        print(f"Warning: Could not delete temp file: {e}")
-```
-
-**Or simpler bash approach (Windows):**
-```bash
-python .claude/skills/pattern-scanner/scripts/temp_scan_20251029_163045.py
-del .claude\skills\pattern-scanner\scripts\temp_scan_20251029_163045.py
-```
-
-**Or bash (Linux/Mac):**
-```bash
-python .claude/skills/pattern-scanner/scripts/temp_scan_20251029_163045.py && rm .claude/skills/pattern-scanner/scripts/temp_scan_20251029_163045.py
-```
-
-## Step 4: Report Results to User
-
-The scanner will output:
-- ✅ Patterns detected count
-- 💡 Signal (LONG/SHORT/NEUTRAL) with bias
-- 📈 Probability percentage
-- 📁 HTML report path
-
-The HTML report opens automatically in the browser with:
-- Vibrant purple/violet design
-- Pattern cards with emojis and explanations
-- Interactive candlestick chart
-- Technical indicators
-- Trading setup (Entry/SL/TP)
-- Risk management guidance
-- Executive summary
+If a timeframe has insufficient data, it will be skipped with a warning.
