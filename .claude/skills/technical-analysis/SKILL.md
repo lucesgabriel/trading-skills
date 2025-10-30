@@ -357,4 +357,115 @@ Percentage Stop: 1-3% from entry
 
 ---
 
+## Execution Instructions
+
+When user requests technical analysis (e.g., "analyze EURUSD", "technical analysis for GBPUSD"), follow this 3-step workflow:
+
+### Step 1: Fetch Market Data from MCP
+
+Make 5 parallel MCP calls to get comprehensive data:
+
+```python
+price_data = mcp__metatrader__get_symbol_price(symbol_name: "EURUSD")
+m15_data = mcp__metatrader__get_candles_latest(symbol_name: "EURUSD", timeframe: "M15", count: 250)
+h1_data = mcp__metatrader__get_candles_latest(symbol_name: "EURUSD", timeframe: "H1", count: 250)
+h4_data = mcp__metatrader__get_candles_latest(symbol_name: "EURUSD", timeframe: "H4", count: 250)
+d1_data = mcp__metatrader__get_candles_latest(symbol_name: "EURUSD", timeframe: "D1", count: 250)
+```
+
+**Important:** Request 250 candles to ensure enough data for 200-period moving averages and other indicators.
+
+### Step 2: Create Temporary Python Script
+
+Use Write tool to create `.claude/skills/technical-analysis/scripts/temp_analysis_{timestamp}.py` with this **EXACT** template:
+
+```python
+#!/usr/bin/env python3
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent))
+from run_analysis import run_technical_analysis
+
+# Extract CSV strings from MCP responses
+csv_m15 = m15_data["result"] if isinstance(m15_data, dict) else m15_data
+csv_h1 = h1_data["result"] if isinstance(h1_data, dict) else h1_data
+csv_h4 = h4_data["result"] if isinstance(h4_data, dict) else h4_data
+csv_d1 = d1_data["result"] if isinstance(d1_data, dict) else d1_data
+
+# Prepare MCP data in correct format
+mcp_data = {
+    "price": price_data,           # Full price dict from get_symbol_price
+    "candles_m15": csv_m15,        # CSV string from get_candles_latest
+    "candles_h1": csv_h1,          # CSV string from get_candles_latest
+    "candles_h4": csv_h4,          # CSV string from get_candles_latest
+    "candles_d1": csv_d1           # CSV string from get_candles_latest
+}
+
+# Run analysis - MUST pass symbol AND mcp_data
+result = run_technical_analysis("EURUSD", mcp_data)
+
+# Print formatted output
+print(result["formatted_output"])
+```
+
+**Critical Notes:**
+- Replace `"EURUSD"` with the actual symbol requested by user
+- Replace variable names (`m15_data`, `h1_data`, etc.) with actual variable names from Step 1
+- Do NOT modify the structure - `run_analysis.py` expects this exact format
+- The script is intentionally small (15 lines) - all logic is in `run_analysis.py`
+
+### Step 3: Execute Script and Present Results
+
+Execute the temporary script:
+```bash
+python ".claude/skills/technical-analysis/scripts/temp_analysis_{timestamp}.py"
+```
+
+**Expected Output:**
+The script will print a formatted technical analysis including:
+- Current market situation (price, ATR, volatility)
+- Multi-timeframe analysis (M15, H1, H4, D1)
+- Indicator readings (RSI, MACD, MAs, Bollinger Bands, Stochastic)
+- Multi-timeframe confluence (overall bias and probability)
+- Support/Resistance levels
+- Trading recommendation (LONG/SHORT/WAIT)
+- Complete trading setup (Entry, SL, TP1, TP2, Risk:Reward)
+- Execution instructions
+- Risk management warnings
+
+**Present to User:**
+1. Copy the formatted output from the script
+2. Optionally add brief commentary about key points
+3. Answer any follow-up questions about the analysis
+
+**Example Workflow:**
+
+```
+User: "analyze EURUSD"
+
+Step 1: Fetch MCP data (5 parallel calls)
+→ price_data, m15_data, h1_data, h4_data, d1_data
+
+Step 2: Create temp_analysis_20251030_160000.py with template
+→ 15 lines, imports run_analysis.py
+
+Step 3: Execute script
+→ python temp_analysis_20251030_160000.py
+→ Formatted analysis printed to console
+
+Step 4: Present results to user
+→ Copy output, add commentary if needed
+```
+
+**Troubleshooting:**
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| `ModuleNotFoundError: run_analysis` | Script not in correct directory | Ensure temp script is in `.claude/skills/technical-analysis/scripts/` |
+| `KeyError: 'result'` | MCP response format changed | Check if CSV is nested in dict or direct string |
+| `ValueError: No candle data` | Insufficient candles returned | Verify MetaTrader connection and symbol availability |
+| Empty snapshots dict | CSV parsing failed | Check CSV format from MCP, ensure headers present |
+
+---
+
 Remember: No analysis guarantees success. Always use proper risk management and never risk more than you can afford to lose.
